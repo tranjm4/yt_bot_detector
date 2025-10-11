@@ -9,7 +9,8 @@ services:
       - "5555:5432"
 
     volumes:
-      - db_data:/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+      - ./psql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
   psql-test:
     container_name: yt-psql-test
@@ -20,6 +21,8 @@ services:
       POSTGRES_DB: test_db
     ports:
       - "5678:5432"
+    volumes:
+      - ./psql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U test_user" ]
       interval: 5s
