@@ -1,12 +1,12 @@
 CREATE SCHEMA IF NOT EXISTS YT;
 
-CREATE TABLE YT.Channel (
+CREATE TABLE YT.Channels (
     channelId VARCHAR(30) PRIMARY KEY
 );
 
 CREATE TABLE YT.Users (
     userId VARCHAR(20) PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
+    username VARCHAR(40) NOT NULL,
     createDate TIMESTAMP NOT NULL
 );
 
@@ -16,7 +16,7 @@ CREATE TABLE YT.Videos (
     publishDate TIMESTAMP NOT NULL,
     channelId VARCHAR(30) NOT NULL,
 
-    FOREIGN KEY (channelId) REFERENCES YT.Channel(channelId)
+    FOREIGN KEY (channelId) REFERENCES YT.Channels(channelId)
 );
 
 CREATE TABLE YT.Comments (
@@ -24,6 +24,7 @@ CREATE TABLE YT.Comments (
     commenterId VARCHAR(20) NOT NULL,
     videoId VARCHAR(20) NOT NULL,
     isReply BOOLEAN NOT NULL,
+    threadId VARCHAR(50),
     publishDate TIMEStAMP NOT NULL,
     editDate TIMESTAMP,
     likeCount INTEGER,
@@ -34,8 +35,12 @@ CREATE TABLE YT.Comments (
         ON UPDATE CASCADE,
     FOREIGN KEY (videoId) REFERENCES YT.Videos(videoId)
         ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (threadId) REFERENCES YT.Comments(commentId)
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 );
 
 CREATE INDEX idx_comments_commenter ON YT.Comments(commenterId);
 CREATE INDEX idx_comments_video ON YT.Comments(videoId);
+CREATE INDEX idx_comments_thread ON YT.Comments(threadId);
