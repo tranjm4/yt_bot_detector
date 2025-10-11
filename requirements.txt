@@ -5,3 +5,4 @@ google-api-core==2.26.0
 google-api-python-client==2.184.0
 typing-extensions
 psycopg2-binary==2.9.11
+pydantic==2.12.0
