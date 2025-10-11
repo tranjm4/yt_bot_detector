@@ -157,7 +157,6 @@ def get_commenter_details(client: Resource, account_id: str):
 def scraper() -> List[CommentData]:
     """
     Retrieves comments from the 5 most recent videos from all channels.
-    Tags the retrieved comments with the version_name argument
     
     Returns:
         List[CommentData]: A list of CommentData TypedDicts
