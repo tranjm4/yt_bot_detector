@@ -12,6 +12,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+class VersionFields(BaseModel):
+    versionName: str
+    createdAt: datetime
+    versionDescription: Optional[str] = None
+
 class ChannelFields(BaseModel):
     channelId: str = Field(max_length=30)
 
@@ -19,12 +24,15 @@ class UserFields(BaseModel):
     userId: str = Field(max_length=20)
     username: str = Field(max_length=40)
     createDate: datetime
+    subCount: Optional[int] = None
+    videoCount: Optional[int] = None
 
 class VideoFields(BaseModel):
     videoId: str = Field(max_length=20)
     title: str
     publishDate: datetime
     channelId: str = Field(max_length=30)
+    versionName: str = Field(max_length=24)
 
 class CommentFields(BaseModel):
     commentId: str = Field(max_length=50)
@@ -36,6 +44,7 @@ class CommentFields(BaseModel):
     editDate: Optional[datetime] = None
     likeCount: Optional[int] = None
     commentText: str
+    versionName: str = Field(max_length=24)
 
 class Psql:
     def __init__(self):
@@ -70,6 +79,7 @@ class Psql:
         self._verify_table(table)
         
         tables = {
+            "Versions": VersionFields,
             "Channels": ChannelFields,
             "Users": UserFields,
             "Videos": VideoFields,
@@ -115,6 +125,6 @@ class Psql:
         Checks for valid table name
         Raises a ValueError if it doesn't exist
         """
-        allowed_tables = ["Channels", "Users", "Videos", "Comments"]
+        allowed_tables = ["Versions", "Channels", "Users", "Videos", "Comments"]
         if table not in allowed_tables:
             raise ValueError(f"Invalid table name: {table}")
