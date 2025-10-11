@@ -7,6 +7,18 @@ jobs:
     build-and-test:
         runs-on: ubuntu-latest
 
+        services:
+            postgres:
+                image: postgres:17
+                env:
+                    POSTGRES_USER: test_user
+                    POSTGRES_PASSWORD: test_password
+                    POSTGRES_DB: test_db
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
         steps:
             - uses: actions/checkout@v4
 
@@ -20,6 +32,16 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
 
+            - name: Load database schema
+              run: |
+                PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f psql/schema.sql
+
             - name: Run tests
+              env:
+                POSTGRES_HOST: localhost
+                POSTGRES_PORT: 5432
+                POSTGRES_USER: test_user
+                POSTGRES_PASSWORD: test_password
+                POSTGRES_DB: test_db
               run: |
                 python -m pytest
