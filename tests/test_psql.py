@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import psycopg2
 
+from datetime import datetime
+
 from dotenv import load_dotenv
 import os
 import sys
@@ -26,15 +28,52 @@ class TestPsql:
 
     @pytest.fixture
     def mock_user_data(self):
-        return ('user123', 'test_user', '2025-01-01 12:00:00')
+        return ('user123', 'test_user', datetime.strptime('2025-01-01 12:00:00', '%Y-%m-%d %H:%M:%S'))
     
     @pytest.fixture
     def mock_video_data(self):
-        return ('vid123abc', 'Test Video', '2025-01-15 10:30:00', 'UC123')
+        return ('vid123abc', 'Test Video', datetime.strptime('2025-01-15 10:30:00', '%Y-%m-%d %H:%M:%S'), 'UC123')
     
     @pytest.fixture
     def mock_comment_data(self):
-        return ('comment123', 'user123', 'vid123abc', False, '2025-01-16 10:00:00', None, 42, 'Test comment')
+        return ('comment123', 'user123', 'vid123abc', False, None, datetime.strptime('2025-02-15 10:30:00', '%Y-%m-%d %H:%M:%S'), None, 42, 'Test comment')
+    
+    @pytest.fixture
+    def mock_channel_insert(self):
+        return {
+            "channelId": "UC123"
+        }
+        
+    @pytest.fixture
+    def mock_user_insert(self):
+        return {
+            "userId": "user123",
+            "username": "test_user",
+            "createDate": "2025-01-01 12:00:00"
+        }
+        
+    @pytest.fixture
+    def mock_video_insert(self):
+        return {
+            "videoId": "vid123abc",
+            "title": "Test Video",
+            "publishDate": "2025-01-15 10:30:00",
+            "channelId": "UC123"
+        }
+        
+    @pytest.fixture
+    def mock_comment_insert(self):
+        return {
+            "commentId": "comment123",
+            "commenterId": "user123",
+            "videoId": "vid123abc",
+            "isReply": False,
+            "threadId": None,
+            "publishDate": "2025-02-15 10:30:00",
+            "editDate": None,
+            "likeCount": 42,
+            "commentText": "Test comment"
+        }
 
     @pytest.fixture
     def mock_psql_connection(self):
@@ -50,6 +89,25 @@ class TestPsql:
             mock_connect.return_value = mock_connection
 
             yield mock_connection, mock_cursor
+            
+    @pytest.fixture
+    def clean_db(self):
+        """Cleans database before and after each test"""
+        psql_client = psql.Psql()
+        cursor = psql_client.connection.cursor()
+        
+        # Clean before test
+        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels CASCADE;")
+        psql_client.connection.commit()
+        
+        yield psql_client
+        
+        # Clean up after test
+        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels CASCADE;")
+        psql_client.connection.commit()
+        
+        cursor.close()
+        psql_client.close_db()
 
     def test_psql_connection_success(self):
         """Tests for a successful connection"""
@@ -106,3 +164,78 @@ class TestPsql:
         result = psql_client.peek("Comments")
         
         assert result == mock_user_data
+        
+    def test_psql_peek_injection_attempt(self, mock_psql_connection, mock_user_data):
+        """Tests for a SQL injection peek using a different table name"""
+        _, mock_cursor = mock_psql_connection
+        psql_client = psql.Psql()
+
+        with pytest.raises(ValueError) as exception_info:
+            psql_client.peek("Channels; DROP TABLE Yt.Users;")
+
+        assert "Invalid table name" in str(exception_info.value)
+        
+    def test_psql_channels_insertion_success(self, clean_db, mock_channel_insert, mock_channel_data):
+        """Tests for a successful SQL insertion into the Channels table"""
+        psql_client = clean_db
+        channel_base_model = psql.ChannelFields(**mock_channel_insert)
+        result = psql_client.insert("Channels", channel_base_model)
+        
+        assert result == True
+        
+        assert psql_client.peek("Channels") == mock_channel_data
+        
+    def test_psql_users_insertion_success(self, clean_db, mock_user_insert, mock_user_data):
+        """Tests for a successful SQL insertion into the Users table"""
+        psql_client = clean_db
+        user_base_model = psql.UserFields(**mock_user_insert)
+        result = psql_client.insert("Users", user_base_model)
+        
+        assert result == True
+        
+        assert psql_client.peek("Users") == mock_user_data
+        
+    def test_psql_videos_insertion_success(self, clean_db, mock_channel_insert, mock_video_insert, mock_video_data):
+        """Tests for a successful SQL insertion into the videos table"""
+        psql_client = clean_db
+
+        # Insert channel first (foreign key dependency)
+        channel_base_model = psql.ChannelFields(**mock_channel_insert)
+        psql_client.insert("Channels", channel_base_model)
+
+        # Insert video afterwards
+        video_base_model = psql.VideoFields(**mock_video_insert)
+        result = psql_client.insert("Videos", video_base_model)
+
+        assert result == True
+
+        assert psql_client.peek("Videos") == mock_video_data
+        
+    def test_psql_comments_insertion_success(self, clean_db, 
+                                             mock_channel_insert, 
+                                             mock_video_insert,
+                                             mock_user_insert, 
+                                             mock_comment_insert, 
+                                             mock_comment_data):
+        """Tests for a successful SQL isnertion into the Comments table"""
+        psql_client = clean_db
+        
+        # Insert channel
+        channel_base_model = psql.ChannelFields(**mock_channel_insert)
+        psql_client.insert("Channels", channel_base_model)
+        
+        # Insert user
+        user_base_model = psql.UserFields(**mock_user_insert)
+        psql_client.insert("Users", user_base_model)
+        
+        # Insert video
+        video_base_model = psql.VideoFields(**mock_video_insert)
+        psql_client.insert("Videos", video_base_model)
+        
+        # Insert comment
+        comments_base_model = psql.CommentFields(**mock_comment_insert)
+        result = psql_client.insert("Comments", comments_base_model)
+        
+        assert result == True
+        assert psql_client.peek("Comments") == mock_comment_data
+        
