@@ -1,0 +1,15 @@
+services:
+  psql:
+    container_name: yt-psql
+    image: postgres:17
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "5555:5432"
+
+    volumes:
+      - db_data:/lib/postgresql/data
+
+volumes:
+  db_data:
