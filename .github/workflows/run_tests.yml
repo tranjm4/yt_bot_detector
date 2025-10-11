@@ -2,6 +2,12 @@ name: Run Unittests
 on:
     push:
         branches: [main, features/*]
+        paths:
+          - 'src/**/*.py'
+          - 'tests/**/*.py'
+          - 'requirements.txt'
+          - 'psql/schema.sql'
+          - '.github/workflows/run_tests.yml'
 
 jobs:
     build-and-test:
