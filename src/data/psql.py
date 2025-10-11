@@ -7,12 +7,39 @@ This module contains functions used to interface with the PostgreSQL database
 import psycopg2
 import os
 
-from typing import Tuple
+from typing import Tuple, Dict, Any, Optional
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+class ChannelFields(BaseModel):
+    channelId: str = Field(max_length=30)
+
+class UserFields(BaseModel):
+    userId: str = Field(max_length=20)
+    username: str = Field(max_length=40)
+    createDate: datetime
+
+class VideoFields(BaseModel):
+    videoId: str = Field(max_length=20)
+    title: str
+    publishDate: datetime
+    channelId: str = Field(max_length=30)
+
+class CommentFields(BaseModel):
+    commentId: str = Field(max_length=50)
+    commenterId: str = Field(max_length=20)
+    videoId: str = Field(max_length=20)
+    isReply: bool
+    threadId: Optional[str] = Field(max_length=50)
+    publishDate: datetime
+    editDate: Optional[datetime] = None
+    likeCount: Optional[int] = None
+    commentText: str
 
 class Psql:
     def __init__(self):
         self.connection = self.connect_to_db()
-        
     
     def connect_to_db(self):
         try:
@@ -36,8 +63,34 @@ class Psql:
     def close_db(self):
         self.connection.close()
         
-    def insert(self, table, fields):
-        pass
+    def insert(self, table: str, data: BaseModel):
+        """
+        Inserts values into a table given fields
+        """
+        self._verify_table(table)
+        
+        tables = {
+            "Channels": ChannelFields,
+            "Users": UserFields,
+            "Videos": VideoFields,
+            "Comments": CommentFields
+        }
+        
+        # Validate date matches the model
+        if not isinstance(data, tables[table]):
+            raise TypeError(f"Data mnust be {tables[table].__name__} for table {table}")
+        
+        # Convert data to dict and insert
+        data_dict = data.model_dump()
+        columns = ", ".join(data_dict.keys())
+        placeholders = ", ".join(["%s"] * len(data_dict))
+        query = f"INSERT INTO Yt.{table} ({columns}) VALUES ({placeholders})"
+        
+        with self.connection.cursor() as cursor:
+            cursor.execute(query, list(data_dict.values()))
+            self.connection.commit()
+            
+        return True
     
     def peek(self, table: str) -> Tuple:
         """
@@ -50,11 +103,18 @@ class Psql:
             Tuple: A single row from the table
         """
         # Validate table name to prevent SQL injection
-        allowed_tables = ['Channels', 'Users', 'Videos', 'Comments']
-        if table not in allowed_tables:
-            raise ValueError(f"Invalid table name: {table}")
+        self._verify_table(table)
 
         with self.connection.cursor() as cursor:
-            query = f"SELECT * FROM Yt.{table} LIMIT 1;"
+            query = f"SELECT * FROM YT.{table} LIMIT 1;"
             cursor.execute(query)
             return cursor.fetchone()
+        
+    def _verify_table(self, table: str):
+        """
+        Checks for valid table name
+        Raises a ValueError if it doesn't exist
+        """
+        allowed_tables = ["Channels", "Users", "Videos", "Comments"]
+        if table not in allowed_tables:
+            raise ValueError(f"Invalid table name: {table}")
