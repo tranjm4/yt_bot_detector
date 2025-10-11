@@ -7,7 +7,6 @@ dependencies = [
     "python-dotenv==1.1.1",
     "requests==2.32.5",
     "psycopg2-binary==2.9.11",
-    "pytest==8.4.2",
     "google-api-core==2.26.0",
     "google-api-python-client==2.184.0",
     "typing-extensions",
