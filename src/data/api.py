@@ -21,23 +21,26 @@ from functools import wraps
 from pprint import pprint
 
 class CommentData(TypedDict):
-    comment_id: str
-    author_display_name: str
-    author_channel_id: str
-    author_created_date: str | datetime
+    # Channels Table
     video_channel_id: str
-    video_id: str
-    video_title: str
-    video_publish_date: str | datetime
-    channel_id: str
-    text: str
-    like_count: int
-    updated_at: str | datetime
-    published_at: str | datetime
-    is_reply: bool
+    # Users Table
+    author_channel_id: str
+    author_display_name: str
     author_created_at: str | datetime
     author_sub_count: int
     author_video_count: int
+    # Videos Table
+    video_id: str
+    video_title: str
+    video_publish_date: str | datetime
+    
+    # Comments Table
+    comment_id: str
+    is_reply: bool
+    published_at: str | datetime
+    updated_at: str | datetime
+    like_count: int
+    text: str
 
 CHANNEL_HANDLES = [
     "msnbc",
@@ -292,7 +295,6 @@ def process_comment(comment: Dict[str, Any],
     video_channel_id = snippet["channelId"]
     updated_at = snippet["updatedAt"]
     published_at = snippet["publishedAt"]
-    is_updated = updated_at == published_at
     
     account_details_response = get_commenter_details(account_id=author_channel_id)
     
@@ -302,28 +304,29 @@ def process_comment(comment: Dict[str, Any],
         author_created_at = account_details["snippet"]["publishedAt"],
         is_hidden_sub_count = account_details["statistics"]["hiddenSubscriberCount"]
         author_sub_count = account_details["statistics"]["subscriberCount"] \
-            if not is_hidden_sub_count else 0
+            if not is_hidden_sub_count else -1
         author_video_count = account_details["statistics"]["videoCount"]
         
         return CommentData(
-            comment_id = comment_id,
-            author_display_name = author_display_name,
+            video_channel_id = video_channel_id,
+            
             author_channel_id = author_channel_id,
-            like_count = like_count,
-            text = text,
+            author_display_name = author_display_name,
+            author_created_at = author_created_at,
+            author_sub_count = author_sub_count,
+            author_video_count = author_video_count,
+            
             video_id = video_id,
             video_title = video_title,
             video_publish_date = video_publish_date,
-            video_channel_id = video_channel_id,
-            updated_at = updated_at,
-            published_at = published_at,
-            is_updated = is_updated,
+            
+            comment_id = comment_id,
             is_reply = is_reply,
             head_comment_id = head_comment_id,
-            author_created_at = author_created_at,
-            author_is_hidden_sub_count = is_hidden_sub_count,
-            author_sub_count = author_sub_count,
-            author_video_count = author_video_count
+            published_at = published_at,
+            updated_at = updated_at,
+            like_count = like_count,
+            text = text,
         )
     else:
         print(f"Unable to retrieve commenter account info for: {author_display_name}")
