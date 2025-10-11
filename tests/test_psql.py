@@ -23,20 +23,32 @@ class TestPsql:
         monkeypatch.setenv("POSTGRES_DB", os.getenv("POSTGRES_DB", "test_db"))
     
     @pytest.fixture
+    def mock_version_data(self):
+        return ('v1', datetime.strptime('2025-01-01 10:00:00', "%Y-%m-%d %H:%M:%S"), 'test description')
+    
+    @pytest.fixture
     def mock_channel_data(self):
         return ('UC123',)
 
     @pytest.fixture
     def mock_user_data(self):
-        return ('user123', 'test_user', datetime.strptime('2025-01-01 12:00:00', '%Y-%m-%d %H:%M:%S'))
+        return ('user123', 'test_user', datetime.strptime('2025-01-01 12:00:00', '%Y-%m-%d %H:%M:%S'), 10, 1)
     
     @pytest.fixture
     def mock_video_data(self):
-        return ('vid123abc', 'Test Video', datetime.strptime('2025-01-15 10:30:00', '%Y-%m-%d %H:%M:%S'), 'UC123')
+        return ('vid123abc', 'Test Video', datetime.strptime('2025-01-15 10:30:00', '%Y-%m-%d %H:%M:%S'), 'UC123', 'v1')
     
     @pytest.fixture
     def mock_comment_data(self):
-        return ('comment123', 'user123', 'vid123abc', False, None, datetime.strptime('2025-02-15 10:30:00', '%Y-%m-%d %H:%M:%S'), None, 42, 'Test comment')
+        return ('comment123', 'user123', 'vid123abc', False, None, datetime.strptime('2025-02-15 10:30:00', '%Y-%m-%d %H:%M:%S'), None, 42, 'Test comment', 'v1')
+    
+    @pytest.fixture
+    def mock_version_insert(self):
+        return {
+            "versionName": "v1",
+            "createdAt": "2025-01-01 10:00:00",
+            "versionDescription": "test description"
+        }
     
     @pytest.fixture
     def mock_channel_insert(self):
@@ -49,7 +61,9 @@ class TestPsql:
         return {
             "userId": "user123",
             "username": "test_user",
-            "createDate": "2025-01-01 12:00:00"
+            "createDate": "2025-01-01 12:00:00",
+            "subCount": 10,
+            "videoCount": 1
         }
         
     @pytest.fixture
@@ -58,7 +72,8 @@ class TestPsql:
             "videoId": "vid123abc",
             "title": "Test Video",
             "publishDate": "2025-01-15 10:30:00",
-            "channelId": "UC123"
+            "channelId": "UC123",
+            "versionName": "v1"
         }
         
     @pytest.fixture
@@ -72,7 +87,8 @@ class TestPsql:
             "publishDate": "2025-02-15 10:30:00",
             "editDate": None,
             "likeCount": 42,
-            "commentText": "Test comment"
+            "commentText": "Test comment",
+            "versionName": "v1"
         }
 
     @pytest.fixture
@@ -97,13 +113,13 @@ class TestPsql:
         cursor = psql_client.connection.cursor()
         
         # Clean before test
-        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels CASCADE;")
+        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
         psql_client.connection.commit()
         
         yield psql_client
         
         # Clean up after test
-        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels CASCADE;")
+        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
         psql_client.connection.commit()
         
         cursor.close()
@@ -165,6 +181,16 @@ class TestPsql:
         
         assert result == mock_user_data
         
+    def test_psql_peek_versions(self, mock_psql_connection, mock_version_data):
+        """Tests for a peek operation from the Versions table"""
+        _, mock_cursor = mock_psql_connection
+        mock_cursor.fetchone.return_value = mock_version_data
+        
+        psql_client = psql.Psql()
+        result = psql_client.peek("Versions")
+        
+        assert result == mock_version_data
+        
     def test_psql_peek_injection_attempt(self, mock_psql_connection, mock_user_data):
         """Tests for a SQL injection peek using a different table name"""
         _, mock_cursor = mock_psql_connection
@@ -195,15 +221,19 @@ class TestPsql:
         
         assert psql_client.peek("Users") == mock_user_data
         
-    def test_psql_videos_insertion_success(self, clean_db, mock_channel_insert, mock_video_insert, mock_video_data):
+    def test_psql_videos_insertion_success(self, clean_db, mock_version_insert, mock_channel_insert, mock_video_insert, mock_video_data):
         """Tests for a successful SQL insertion into the videos table"""
         psql_client = clean_db
+        
+        # Insert version
+        version_base_model = psql.VersionFields(**mock_version_insert)
+        psql_client.insert("Versions", version_base_model)
 
-        # Insert channel first (foreign key dependency)
+        # Insert channel
         channel_base_model = psql.ChannelFields(**mock_channel_insert)
         psql_client.insert("Channels", channel_base_model)
 
-        # Insert video afterwards
+        # Insert video
         video_base_model = psql.VideoFields(**mock_video_insert)
         result = psql_client.insert("Videos", video_base_model)
 
@@ -216,9 +246,14 @@ class TestPsql:
                                              mock_video_insert,
                                              mock_user_insert, 
                                              mock_comment_insert, 
-                                             mock_comment_data):
+                                             mock_comment_data,
+                                             mock_version_insert):
         """Tests for a successful SQL isnertion into the Comments table"""
         psql_client = clean_db
+        
+        # Insert version
+        version_base_model = psql.VersionFields(**mock_version_insert)
+        psql_client.insert("Versions", version_base_model)
         
         # Insert channel
         channel_base_model = psql.ChannelFields(**mock_channel_insert)
@@ -238,4 +273,14 @@ class TestPsql:
         
         assert result == True
         assert psql_client.peek("Comments") == mock_comment_data
+        
+    def test_psql_version_insertion_success(self, clean_db, mock_version_insert, mock_version_data):
+        """Tests for a successful SQL insertion into the Versions table"""
+        psql_client = clean_db
+        
+        version_base_model = psql.VersionFields(**mock_version_insert)
+        result = psql_client.insert("Versions", version_base_model)
+        
+        assert result == True
+        assert psql_client.peek("Versions")[1:] == mock_version_data[1:] # Ignore autoincrement from previous tests
         
