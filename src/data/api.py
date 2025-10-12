@@ -37,6 +37,7 @@ class CommentData(TypedDict):
     # Comments Table
     comment_id: str
     is_reply: bool
+    thread_id: str
     published_at: str | datetime
     updated_at: str | datetime
     like_count: int
@@ -322,7 +323,7 @@ def process_comment(comment: Dict[str, Any],
             
             comment_id = comment_id,
             is_reply = is_reply,
-            head_comment_id = head_comment_id,
+            thread_id = head_comment_id,
             published_at = published_at,
             updated_at = updated_at,
             like_count = like_count,
@@ -339,7 +340,6 @@ def process_comment(comment: Dict[str, Any],
             video_channel_id = video_channel_id,
             updated_at = updated_at,
             published_at = published_at,
-            is_updated = is_updated,
             is_reply = is_reply,
             head_comment_id = head_comment_id,
         )
