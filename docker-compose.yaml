@@ -7,10 +7,14 @@ services:
       - ./.env
     ports:
       - "5555:5432"
-
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./psql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   psql-test:
     container_name: yt-psql-test
@@ -48,6 +52,17 @@ services:
         PGPASSWORD=test_password psql -h psql-test -U test_user -d test_db -f psql/schema.sql &&
         python -m pytest
       "
+
+  scrape:
+    container_name: yt-scrape
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./scripts/data/Dockerfile
+    depends_on:
+      psql:
+        condition: service_healthy
 
 volumes:
   db_data:
