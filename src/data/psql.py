@@ -26,6 +26,7 @@ class UserFields(BaseModel):
     createDate: datetime
     subCount: Optional[int] = None
     videoCount: Optional[int] = None
+    versionName: str = Field(max_length=24)
 
 class VideoFields(BaseModel):
     videoId: str = Field(max_length=20)
@@ -72,12 +73,17 @@ class Psql:
     def close_db(self):
         self.connection.close()
         
-    def insert(self, table: str, data: BaseModel):
+    def insert(self, table: str, data: BaseModel, on_conflict: str = "NOTHING"):
         """
         Inserts values into a table given fields
+
+        Args:
+            table: Table name to insert into
+            data: Pydantic model with data to insert
+            on_conflict: "NOTHING" to ignore duplicates, "UPDATE" to update on conflict
         """
         self._verify_table(table)
-        
+
         tables = {
             "Versions": VersionFields,
             "Channels": ChannelFields,
@@ -85,21 +91,38 @@ class Psql:
             "Videos": VideoFields,
             "Comments": CommentFields
         }
-        
+
         # Validate date matches the model
         if not isinstance(data, tables[table]):
             raise TypeError(f"Data mnust be {tables[table].__name__} for table {table}")
-        
+
         # Convert data to dict and insert
         data_dict = data.model_dump()
         columns = ", ".join(data_dict.keys())
         placeholders = ", ".join(["%s"] * len(data_dict))
-        query = f"INSERT INTO Yt.{table} ({columns}) VALUES ({placeholders})"
-        
+
+        # Build ON CONFLICT clause
+        conflict_clause = "ON CONFLICT DO NOTHING"
+        if on_conflict.upper() == "UPDATE":
+            # Get primary keys for each table
+            primary_keys = {
+                "Versions": ["versionName"],
+                "Channels": ["channelId"],
+                "Users": ["userId"],
+                "Videos": ["videoId"],
+                "Comments": ["commentId"]
+            }
+            pk_cols = ", ".join(primary_keys[table])
+            update_cols = [col for col in data_dict.keys() if col not in primary_keys[table]]
+            update_clause = ", ".join([f"{col} = EXCLUDED.{col}" for col in update_cols])
+            conflict_clause = f"ON CONFLICT ({pk_cols}) DO UPDATE SET {update_clause}"
+
+        query = f"INSERT INTO Yt.{table} ({columns}) VALUES ({placeholders}) {conflict_clause}"
+
         with self.connection.cursor() as cursor:
             cursor.execute(query, list(data_dict.values()))
             self.connection.commit()
-            
+
         return True
     
     def peek(self, table: str) -> Tuple:
