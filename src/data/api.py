@@ -141,7 +141,7 @@ class YoutubeCommentScraper:
                 part="contentDetails,id,snippet,status",
                 playlistId=uploads_playlist_id,
                 pageToken=page_token,
-                maxResults=50
+                maxResults=20
             )
         else:
             request = self.client.playlistItems().list(
@@ -181,10 +181,17 @@ class YoutubeCommentScraper:
         return comment_thread_response
 
     @api_status_handler
-    def get_commenter_details(self, account_id: str):
+    def get_commenter_details(self, account_id: str | List[str]):
+        """
+        Retrieves commenter details given a single account id or list of account ids
+        """
+        # Join multiple account ids into CSV if applicable
+        id_param = account_id if isinstance(account_id, str) else ",".join(account_id)
+        
         request = self.client.channels().list(
             part="id,snippet,statistics",
-            id=account_id
+            id=id_param,
+            maxResults=50
         )
         response = request.execute()
         
@@ -216,9 +223,9 @@ class YoutubeCommentScraper:
             # Retrieve uploads ID and get videos
             playlist_id = channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
             page_token = None
-            for _ in range(1): # Limit to 50 videos
-                uploads_response = self.get_channel_uploads(playlist_id, page_token)     # Should retrieve 5 videos per page, 
-                                                                        #   as per default pagination settings                      
+            for _ in range(1): # Limit to 20 videos per channel
+                uploads_response = self.get_channel_uploads(playlist_id, page_token)    # Should retrieve 5 videos per page, 
+                                                                                        #   as per default pagination settings                      
                 if uploads_response["status_code"] == 200:
                     uploads = uploads_response["data"]["items"]
                 else:
@@ -230,7 +237,7 @@ class YoutubeCommentScraper:
                 all_data.extend(comments)
                 
                 # Update page token
-                page_token = uploads_response.get("nextPageToken", "")
+                page_token = uploads_response["data"].get("nextPageToken", "")
                 if not page_token:
                     break
             
@@ -255,7 +262,9 @@ class YoutubeCommentScraper:
             video_title = video_entry["snippet"]["title"]
             video_publish_date = video_entry["contentDetails"]["videoPublishedAt"]
             
-            # Set cap of 1000 comments
+            logger.info(f"Retrieving from video: [{video_title}]")
+            
+            # Limit to 200 comments per video
             page_token = None
             for _ in range(2):
                 # Use video ID for comment thread
@@ -267,11 +276,16 @@ class YoutubeCommentScraper:
                     continue
                 
                 # Retrieve all comments from video's comment thread
-                video_comments = self.process_comment_thread(comment_thread, 
-                                                        video_id, 
+                video_comments = self.process_comment_thread(comment_thread,
+                                                        video_id,
                                                         video_title,
                                                         video_publish_date)
                 comments.extend(video_comments)
+
+                # Update page token for next iteration
+                page_token = comment_thread_response["data"].get("nextPageToken", "")
+                if not page_token:
+                    break
             
         return comments
 
@@ -291,36 +305,128 @@ class YoutubeCommentScraper:
             List[CommentData]: A list of retrieved comments
         """
         comments = []
+        
+        batch = []
+        BATCH_SIZE = 50
         for head_comment in comment_thread:
             # Get video ID
             video_id = head_comment["snippet"]["videoId"]
-            head_comment_id = head_comment["snippet"]["topLevelComment"]["id"]
             
             # Get head comment's comment data
             comment = head_comment["snippet"]["topLevelComment"]
-            comment = self.process_comment(comment, 
-                                           video_id=video_id, 
-                                           video_title=video_title,
-                                           video_publish_date=video_publish_date,
-                                           head_comment_id=head_comment_id,
-                                           is_reply=False)
-            comments.append(comment)
-            
-            # Get head comment's ID (for replies)
+            comment = {**comment, "videoId": video_id, "videoTitle": video_title, "videoPublishDate": video_publish_date}
+            batch.append(comment)
+            if len(batch) >= BATCH_SIZE:
+                batch_comments = self.batch_process_comments(batch)
+                comments.extend(batch_comments)
+                batch = []
             
             # If the head comment has replies, get those comments
             replies = head_comment.get("replies", {})
             thread_replies = replies.get("comments", [])
             for reply in thread_replies:
-                comment = self.process_comment(reply, 
-                                               video_id=video_id, 
-                                               video_title=video_title, 
-                                               video_publish_date=video_publish_date, 
-                                               head_comment_id=head_comment_id,
-                                               is_reply=True)
-                comments.append(comment)
+                reply = {**reply, "videoId": video_id, "videoTitle": video_title, "videoPublishDate": video_publish_date}
+                batch.append(reply)
+                if len(batch) >= BATCH_SIZE:
+                    batch_comments = self.batch_process_comments(batch)
+                    comments.extend(batch_comments)
+                    batch = []
+        if batch:
+            batch_comments = self.batch_process_comments(batch)
+            comments.extend(batch_comments)
         
         return comments
+    
+    def batch_process_comments(self, comments: List[Dict[str, Any]]):
+        """
+        Batch processing of comments in contrast to one request per comment (bottleneck)
+        """
+        # How can I convey is_reply and head_comment_id?
+        # parent_id
+        processed_comments = []
+        
+        logger.info("Processing batch")
+        
+        # Get channel details by batch
+        # Extract author channel IDs from authorChannelId field
+        channel_ids = []
+        for comment in comments:
+            author_channel_id = comment["snippet"]["authorChannelId"]
+            if isinstance(author_channel_id, dict):
+                channel_ids.append(author_channel_id["value"])
+            else:
+                channel_ids.append(author_channel_id)
+
+        account_details_response = self.get_commenter_details(channel_ids)
+        if account_details_response["status_code"] == 200:
+            account_details = account_details_response["data"]["items"]
+            logger.info(f"Received {len(account_details)} results")
+        else:
+            raise Exception("Unable to process batch")
+
+        # Create a mapping of channel ID to account details for efficient lookup
+        account_details_map = {detail["id"]: detail for detail in account_details}
+
+        for comment in comments:
+            # video_channel_id should come from the video snippet we added
+            video_channel_id = comment.get("videoChannelId", comment["snippet"].get("videoOwnerChannelId", ""))
+
+            # Extract author channel ID
+            author_channel_id_raw = comment["snippet"]["authorChannelId"]
+            author_channel_id = author_channel_id_raw["value"] if isinstance(author_channel_id_raw, dict) else author_channel_id_raw
+
+            author_display_name = comment["snippet"]["authorDisplayName"]
+
+            # Get account details from the map
+            account_detail = account_details_map.get(author_channel_id)
+            if not account_detail:
+                logger.warning(f"No account details found for {author_display_name} ({author_channel_id})")
+                continue
+            video_id = comment["videoId"]
+            video_title = comment["videoTitle"]
+            video_publish_date = comment["videoPublishDate"]
+            
+            comment_id = comment["id"]
+            head_comment_id = comment.get("parentId", None)
+            is_reply = head_comment_id != "" or head_comment_id != None
+            published_at = comment["snippet"]["publishedAt"]
+            updated_at = comment["snippet"]["updatedAt"]
+            like_count = comment["snippet"]["likeCount"]
+            text = comment["snippet"]["textOriginal"]
+            
+            author_created_at = account_detail["snippet"]["publishedAt"]
+            is_hidden_sub_count = account_detail["statistics"]["hiddenSubscriberCount"]
+            author_sub_count = account_detail["statistics"]["subscriberCount"] \
+                if not is_hidden_sub_count else -1
+            author_video_count = account_detail["statistics"]["videoCount"]
+            
+            comment_data = CommentData(
+                video_channel_id = video_channel_id,
+                
+                author_channel_id = author_channel_id,
+                author_display_name = author_display_name,
+                author_created_at = author_created_at,
+                author_sub_count = author_sub_count,
+                author_video_count = author_video_count,
+                
+                video_id = video_id,
+                video_title = video_title,
+                video_publish_date = video_publish_date,
+                
+                comment_id = comment_id,
+                is_reply = is_reply,
+                thread_id = head_comment_id,
+                published_at = published_at,
+                updated_at = updated_at,
+                like_count = like_count,
+                text = text,
+            )
+            
+            processed_comments.append(comment_data)
+        
+        logger.info("Finished processing batch")
+            
+        return processed_comments
 
     def process_comment(self, comment: Dict[str, Any], 
                         video_id: str, video_title: str, 
