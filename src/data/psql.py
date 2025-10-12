@@ -27,6 +27,7 @@ class UserFields(BaseModel):
     subCount: Optional[int] = None
     videoCount: Optional[int] = None
     versionName: str = Field(max_length=24)
+    updatedAt: Optional[datetime] = None
 
 class VideoFields(BaseModel):
     videoId: str = Field(max_length=20)
@@ -34,6 +35,7 @@ class VideoFields(BaseModel):
     publishDate: datetime
     channelId: str = Field(max_length=30)
     versionName: str = Field(max_length=24)
+    updatedAt: Optional[datetime] = None
 
 class CommentFields(BaseModel):
     commentId: str = Field(max_length=50)
@@ -46,6 +48,7 @@ class CommentFields(BaseModel):
     likeCount: Optional[int] = None
     commentText: str
     versionName: str = Field(max_length=24)
+    updatedAt: Optional[datetime] = None
 
 class Psql:
     def __init__(self):
@@ -98,6 +101,9 @@ class Psql:
 
         # Convert data to dict and insert
         data_dict = data.model_dump()
+        # Remove updatedAt if None - let database default handle it
+        if "updatedAt" in data_dict and data_dict["updatedAt"] is None:
+            del data_dict["updatedAt"]
         columns = ", ".join(data_dict.keys())
         placeholders = ", ".join(["%s"] * len(data_dict))
 
@@ -114,7 +120,11 @@ class Psql:
             }
             pk_cols = ", ".join(primary_keys[table])
             update_cols = [col for col in data_dict.keys() if col not in primary_keys[table]]
-            update_clause = ", ".join([f"{col} = EXCLUDED.{col}" for col in update_cols])
+            # Add updatedAt to update clause if it's not already there
+            if "updatedAt" not in update_cols and table in ["Users", "Videos", "Comments"]:
+                update_clause = ", ".join([f"{col} = EXCLUDED.{col}" for col in update_cols]) + ", updatedAt = CURRENT_TIMESTAMP"
+            else:
+                update_clause = ", ".join([f"{col} = EXCLUDED.{col}" for col in update_cols])
             conflict_clause = f"ON CONFLICT ({pk_cols}) DO UPDATE SET {update_clause}"
 
         query = f"INSERT INTO Yt.{table} ({columns}) VALUES ({placeholders}) {conflict_clause}"
@@ -151,3 +161,9 @@ class Psql:
         allowed_tables = ["Versions", "Channels", "Users", "Videos", "Comments"]
         if table not in allowed_tables:
             raise ValueError(f"Invalid table name: {table}")
+        
+    def get_user_comments(self, username) -> Dict[str, Dict]:
+        """
+        Given a username, gets all comments from the user
+        """
+        pass
