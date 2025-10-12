@@ -19,26 +19,30 @@ CREATE TABLE YT.Channels (
 );
 
 CREATE TABLE YT.Users (
-    userId VARCHAR(20) PRIMARY KEY,
+    userId VARCHAR(20) NOT NULL,
     username VARCHAR(40) NOT NULL,
     createDate TIMESTAMP NOT NULL,
     subCount INTEGER,
-    videoCount INTEGER
+    videoCount INTEGER,
+    versionName VARCHAR(24) NOT NULL,
+
+    PRIMARY KEY (userId, versionName)
 );
 
 CREATE TABLE YT.Videos (
-    videoId VARCHAR(20) PRIMARY KEY,
+    videoId VARCHAR(20) NOT NULL,
     title TEXT NOT NULL,
     publishDate TIMESTAMP NOT NULL,
     channelId VARCHAR(30) NOT NULL,
     versionName VARCHAR(24) NOT NULL,
 
+    PRIMARY KEY (videoId, versionName),
     FOREIGN KEY (channelId) REFERENCES YT.Channels(channelId),
     FOREIGN KEY (versionName) REFERENCES YT.Versions(versionName)
 );
 
 CREATE TABLE YT.Comments (
-    commentId VARChAR(50) PRIMARY KEY,
+    commentId VARChAR(50) NOT NULL,
     commenterId VARCHAR(20) NOT NULL,
     videoId VARCHAR(20) NOT NULL,
     isReply BOOLEAN NOT NULL,
@@ -49,13 +53,14 @@ CREATE TABLE YT.Comments (
     commentText TEXT NOT NULL,
     versionName VARCHAR(24) NOT NULL,
 
-    FOREIGN KEY (commenterId) REFERENCES YT.Users(userId)
+    PRIMARY KEY (commentId, versionName),
+    FOREIGN KEY (commenterId, versionName) REFERENCES YT.Users(userId, versionName)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (videoId) REFERENCES YT.Videos(videoId)
+    FOREIGN KEY (videoId, versionName) REFERENCES YT.Videos(videoId, versionName)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (threadId) REFERENCES YT.Comments(commentId)
+    FOREIGN KEY (threadId, versionName) REFERENCES YT.Comments(commentId, versionName)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (versionName) REFERENCES YT.Versions(versionName)
