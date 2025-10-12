@@ -32,7 +32,7 @@ class TestPsql:
 
     @pytest.fixture
     def mock_user_data(self):
-        return ('user123', 'test_user', datetime.strptime('2025-01-01 12:00:00', '%Y-%m-%d %H:%M:%S'), 10, 1)
+        return ('user123', 'test_user', datetime.strptime('2025-01-01 12:00:00', '%Y-%m-%d %H:%M:%S'), 10, 1, 'v1')
     
     @pytest.fixture
     def mock_video_data(self):
@@ -63,7 +63,8 @@ class TestPsql:
             "username": "test_user",
             "createDate": "2025-01-01 12:00:00",
             "subCount": 10,
-            "videoCount": 1
+            "videoCount": 1,
+            "versionName": "v1"
         }
         
     @pytest.fixture
@@ -111,17 +112,24 @@ class TestPsql:
         """Cleans database before and after each test"""
         psql_client = psql.Psql()
         cursor = psql_client.connection.cursor()
-        
-        # Clean before test
-        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
-        psql_client.connection.commit()
-        
+
+        try:
+            # Clean before test
+            cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
+            psql_client.connection.commit()
+        except Exception:
+            psql_client.connection.rollback()
+            raise
+
         yield psql_client
-        
-        # Clean up after test
-        cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
-        psql_client.connection.commit()
-        
+
+        try:
+            # Clean up after test
+            cursor.execute("TRUNCATE TABLE Yt.Comments, Yt.Videos, Yt.Users, Yt.Channels, Yt.Versions CASCADE;")
+            psql_client.connection.commit()
+        except Exception:
+            psql_client.connection.rollback()
+
         cursor.close()
         psql_client.close_db()
 
