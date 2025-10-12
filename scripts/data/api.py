@@ -25,7 +25,6 @@ logging.basicConfig(level=logging.INFO)
 def main(version_name, version_description):
     scraper = YoutubeCommentScraper()
     comment_data_list = scraper.scrape()
-    logger.info(f"Collected comment_data_list: {comment_data_list}")
     process_comments(comment_data_list, version_name, version_description)
     
 def process_comments(comments_list: List[CommentData], version_name: str, version_description: str):
@@ -38,6 +37,7 @@ def process_comments(comments_list: List[CommentData], version_name: str, versio
         version_description (str): The version description, provided by the commandline argument
     """
     client = Psql()
+    logger.info("Inserting into Postgres database...")
     try:
         # Insert version into table
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -69,8 +69,8 @@ def process_comments(comments_list: List[CommentData], version_name: str, versio
                             f"\n\tUsers:\t{result2}"
                             f"\n\tVideos:\t{result3}"
                             f"\n\tComments:\t{result4}")
-            else:
-                logger.info("Successfully inserted comment data")
+        
+        logger.info("Completed!")
     except Exception as e:
         logger.error(f"Error processing comments: {e}")
         raise
