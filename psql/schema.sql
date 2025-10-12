@@ -15,11 +15,11 @@ CREATE TABLE YT.Versions (
 );
 
 CREATE TABLE YT.Channels (
-    channelId VARCHAR(30) PRIMARY KEY
+    channelId VARCHAR(40) PRIMARY KEY
 );
 
 CREATE TABLE YT.Users (
-    userId VARCHAR(20) NOT NULL,
+    userId VARCHAR(50) NOT NULL,
     username VARCHAR(40) NOT NULL,
     createDate TIMESTAMP NOT NULL,
     subCount INTEGER,
@@ -33,7 +33,7 @@ CREATE TABLE YT.Videos (
     videoId VARCHAR(20) NOT NULL,
     title TEXT NOT NULL,
     publishDate TIMESTAMP NOT NULL,
-    channelId VARCHAR(30) NOT NULL,
+    channelId VARCHAR(40) NOT NULL,
     versionName VARCHAR(24) NOT NULL,
 
     PRIMARY KEY (videoId, versionName),
@@ -43,7 +43,7 @@ CREATE TABLE YT.Videos (
 
 CREATE TABLE YT.Comments (
     commentId VARChAR(50) NOT NULL,
-    commenterId VARCHAR(20) NOT NULL,
+    commenterId VARCHAR(50) NOT NULL,
     videoId VARCHAR(20) NOT NULL,
     isReply BOOLEAN NOT NULL,
     threadId VARCHAR(50),
