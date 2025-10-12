@@ -201,7 +201,7 @@ class TestYoutubeCommentScraper:
             part="contentDetails,id,snippet,status",
             playlistId="UU123",
             pageToken="token123",
-            maxResults=50
+            maxResults=20
         )
 
     def test_get_comment_thread_success(self, scraper, mock_comment_thread):
@@ -252,7 +252,8 @@ class TestYoutubeCommentScraper:
         assert result["data"] == mock_commenter_details
         scraper.client.channels().list.assert_called_with(
             part="id,snippet,statistics",
-            id="UC123"
+            id="UC123",
+            maxResults=50
         )
 
     def test_process_comment_with_account_details(self, scraper, mock_commenter_details):

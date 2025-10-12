@@ -132,6 +132,33 @@ class TestPsql:
 
         cursor.close()
         psql_client.close_db()
+        
+    @pytest.fixture
+    def inserted_comment(self, clean_db, 
+                        mock_version_insert,
+                        mock_channel_insert, 
+                        mock_user_insert,
+                        mock_video_insert,
+                        mock_comment_insert):
+        """Fixture that inserts a complete comment with all dependencies"""
+        psql_client = clean_db
+        # Insert version
+        version_base_model = psql.VersionFields(**mock_version_insert)
+        psql_client.insert("Versions", version_base_model)
+        # Insert channel
+        channel_base_model = psql.ChannelFields(**mock_channel_insert)
+        psql_client.insert("Channels", channel_base_model)
+        # Insert user
+        user_base_model = psql.UserFields(**mock_user_insert)
+        psql_client.insert("Users", user_base_model)
+        # Insert video
+        video_base_model = psql.VideoFields(**mock_video_insert)
+        psql_client.insert("Videos", video_base_model)
+        # Insert comment
+        comment_base_model = psql.CommentFields(**mock_comment_insert)
+        psql_client.insert("Comments", comment_base_model)
+        
+        return psql_client
 
     def test_psql_connection_success(self):
         """Tests for a successful connection"""
@@ -219,20 +246,27 @@ class TestPsql:
         
         assert psql_client.peek("Channels") == mock_channel_data
         
-    def test_psql_users_insertion_success(self, clean_db, mock_user_insert, mock_user_data):
+    def test_psql_users_insertion_success(self, clean_db, mock_version_insert, mock_user_insert, mock_user_data):
         """Tests for a successful SQL insertion into the Users table"""
         psql_client = clean_db
+
+        # Insert version first (foreign key requirement)
+        version_base_model = psql.VersionFields(**mock_version_insert)
+        psql_client.insert("Versions", version_base_model)
+
         user_base_model = psql.UserFields(**mock_user_insert)
         result = psql_client.insert("Users", user_base_model)
-        
+
         assert result == True
-        
-        assert psql_client.peek("Users") == mock_user_data
+
+        # Check only the first 6 fields (excluding updatedAt)
+        peek_result = psql_client.peek("Users")
+        assert peek_result[:6] == mock_user_data
         
     def test_psql_videos_insertion_success(self, clean_db, mock_version_insert, mock_channel_insert, mock_video_insert, mock_video_data):
         """Tests for a successful SQL insertion into the videos table"""
         psql_client = clean_db
-        
+
         # Insert version
         version_base_model = psql.VersionFields(**mock_version_insert)
         psql_client.insert("Versions", version_base_model)
@@ -247,40 +281,44 @@ class TestPsql:
 
         assert result == True
 
-        assert psql_client.peek("Videos") == mock_video_data
+        # Check only the first 5 fields (excluding updatedAt)
+        peek_result = psql_client.peek("Videos")
+        assert peek_result[:5] == mock_video_data
         
-    def test_psql_comments_insertion_success(self, clean_db, 
-                                             mock_channel_insert, 
+    def test_psql_comments_insertion_success(self, clean_db,
+                                             mock_channel_insert,
                                              mock_video_insert,
-                                             mock_user_insert, 
-                                             mock_comment_insert, 
+                                             mock_user_insert,
+                                             mock_comment_insert,
                                              mock_comment_data,
                                              mock_version_insert):
         """Tests for a successful SQL isnertion into the Comments table"""
         psql_client = clean_db
-        
+
         # Insert version
         version_base_model = psql.VersionFields(**mock_version_insert)
         psql_client.insert("Versions", version_base_model)
-        
+
         # Insert channel
         channel_base_model = psql.ChannelFields(**mock_channel_insert)
         psql_client.insert("Channels", channel_base_model)
-        
+
         # Insert user
         user_base_model = psql.UserFields(**mock_user_insert)
         psql_client.insert("Users", user_base_model)
-        
+
         # Insert video
         video_base_model = psql.VideoFields(**mock_video_insert)
         psql_client.insert("Videos", video_base_model)
-        
+
         # Insert comment
         comments_base_model = psql.CommentFields(**mock_comment_insert)
         result = psql_client.insert("Comments", comments_base_model)
-        
+
         assert result == True
-        assert psql_client.peek("Comments") == mock_comment_data
+        # Check only the first 10 fields (excluding updatedAt)
+        peek_result = psql_client.peek("Comments")
+        assert peek_result[:10] == mock_comment_data
         
     def test_psql_version_insertion_success(self, clean_db, mock_version_insert, mock_version_data):
         """Tests for a successful SQL insertion into the Versions table"""
