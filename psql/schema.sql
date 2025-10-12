@@ -19,30 +19,31 @@ CREATE TABLE YT.Channels (
 );
 
 CREATE TABLE YT.Users (
-    userId VARCHAR(50) NOT NULL,
+    userId VARCHAR(50) PRIMARY KEY,
     username VARCHAR(40) NOT NULL,
     createDate TIMESTAMP NOT NULL,
     subCount INTEGER,
     videoCount INTEGER,
     versionName VARCHAR(24) NOT NULL,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (userId, versionName)
+    FOREIGN KEY (versionName) REFERENCES YT.Versions(versionName)
 );
 
 CREATE TABLE YT.Videos (
-    videoId VARCHAR(20) NOT NULL,
+    videoId VARCHAR(20) PRIMARY KEY,
     title TEXT NOT NULL,
     publishDate TIMESTAMP NOT NULL,
     channelId VARCHAR(40) NOT NULL,
     versionName VARCHAR(24) NOT NULL,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (videoId, versionName),
     FOREIGN KEY (channelId) REFERENCES YT.Channels(channelId),
     FOREIGN KEY (versionName) REFERENCES YT.Versions(versionName)
 );
 
 CREATE TABLE YT.Comments (
-    commentId VARChAR(50) NOT NULL,
+    commentId VARChAR(50) PRIMARY KEY,
     commenterId VARCHAR(50) NOT NULL,
     videoId VARCHAR(20) NOT NULL,
     isReply BOOLEAN NOT NULL,
@@ -52,15 +53,15 @@ CREATE TABLE YT.Comments (
     likeCount INTEGER,
     commentText TEXT NOT NULL,
     versionName VARCHAR(24) NOT NULL,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (commentId, versionName),
-    FOREIGN KEY (commenterId, versionName) REFERENCES YT.Users(userId, versionName)
+    FOREIGN KEY (commenterId) REFERENCES YT.Users(userId)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (videoId, versionName) REFERENCES YT.Videos(videoId, versionName)
+    FOREIGN KEY (videoId) REFERENCES YT.Videos(videoId)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (threadId, versionName) REFERENCES YT.Comments(commentId, versionName)
+    FOREIGN KEY (threadId) REFERENCES YT.Comments(commentId)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     FOREIGN KEY (versionName) REFERENCES YT.Versions(versionName)
