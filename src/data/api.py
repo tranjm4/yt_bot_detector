@@ -147,6 +147,7 @@ class YoutubeCommentScraper:
             request = self.client.playlistItems().list(
                 part="contentDetails,id,snippet,status",
                 playlistId=uploads_playlist_id,
+                maxResults=20
             )
 
         uploads_response = request.execute()
@@ -223,9 +224,8 @@ class YoutubeCommentScraper:
             # Retrieve uploads ID and get videos
             playlist_id = channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
             page_token = None
-            for _ in range(1): # Limit to 20 videos per channel
-                uploads_response = self.get_channel_uploads(playlist_id, page_token)    # Should retrieve 5 videos per page, 
-                                                                                        #   as per default pagination settings                      
+            for _ in range(1): # Limit to 20 videos per channel (1 page × 20 videos)
+                uploads_response = self.get_channel_uploads(playlist_id, page_token)                      
                 if uploads_response["status_code"] == 200:
                     uploads = uploads_response["data"]["items"]
                 else:
