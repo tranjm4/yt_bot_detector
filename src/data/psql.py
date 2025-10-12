@@ -21,7 +21,7 @@ class ChannelFields(BaseModel):
     channelId: str = Field(max_length=30)
 
 class UserFields(BaseModel):
-    userId: str = Field(max_length=20)
+    userId: str = Field(max_length=50)
     username: str = Field(max_length=40)
     createDate: datetime
     subCount: Optional[int] = None
@@ -37,7 +37,7 @@ class VideoFields(BaseModel):
 
 class CommentFields(BaseModel):
     commentId: str = Field(max_length=50)
-    commenterId: str = Field(max_length=20)
+    commenterId: str = Field(max_length=50)
     videoId: str = Field(max_length=20)
     isReply: bool
     threadId: Optional[str] = Field(max_length=50)
