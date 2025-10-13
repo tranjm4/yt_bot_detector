@@ -10,7 +10,7 @@ scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 import os
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Generator
 from typing_extensions import TypedDict
 from datetime import datetime
 
@@ -198,16 +198,14 @@ class YoutubeCommentScraper:
         
         return response
 
-    def scrape(self) -> List[CommentData]:
+    def scrape(self) -> Generator:
         """
         Retrieves comments from the 50 most recent videos from all included channels.
         
         Returns:
             List[CommentData]: A list of CommentData TypedDicts
         """
-        client = build(API_SERVICE_NAME, API_VERSION, developerKey=API_KEY)
         
-        all_data = []
         for channel_handle in CHANNEL_HANDLES:
             logger.info(f"="*80)
             logger.info(f"\tRetrieving comments from: {channel_handle:^30}")
@@ -224,7 +222,7 @@ class YoutubeCommentScraper:
             # Retrieve uploads ID and get videos
             playlist_id = channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
             page_token = None
-            for _ in range(1): # Limit to 20 videos per channel (1 page × 20 videos)
+            for _ in range(2): # Limit to 40 videos per channel (2 page × 20 videos)
                 uploads_response = self.get_channel_uploads(playlist_id, page_token)                      
                 if uploads_response["status_code"] == 200:
                     uploads = uploads_response["data"]["items"]
@@ -233,18 +231,19 @@ class YoutubeCommentScraper:
                     continue
                 
                 
-                comments = self.process_videos(uploads)
-                all_data.extend(comments)
+                # comments = self.process_videos(uploads)
+                for comment_batch in self.process_videos(uploads):
+                    yield comment_batch
                 
                 # Update page token
                 page_token = uploads_response["data"].get("nextPageToken", "")
                 if not page_token:
                     break
             
-        return all_data
+        return
             
 
-    def process_videos(self, uploads: List[Dict[str, Any]]) -> List[CommentData]:
+    def process_videos(self, uploads: List[Dict[str, Any]]) -> Generator:
         """
         Helper function for parsing videos from a list of uploads from a channel.
         
@@ -253,20 +252,19 @@ class YoutubeCommentScraper:
                 (https://developers.google.com/youtube/v3/docs/playlistItems#resource)
         
         Returns:
-            List[CommentData]: A list of all retrieved comments
+            Generator[List[CommentData]]: A list of all retrieved comments
         """
-        comments = []
         for video_entry in uploads:
             # Get an entry's video ID
             video_id = video_entry["contentDetails"]["videoId"]
             video_title = video_entry["snippet"]["title"]
-            video_publish_date = video_entry["contentDetails"]["videoPublishedAt"]
+            video_publish_date = video_entry["snippet"]["publishedAt"]
             
             logger.info(f"Retrieving from video: [{video_title}]")
             
-            # Limit to 200 comments per video
+            # Limit to 1000 comments per video
             page_token = None
-            for _ in range(2):
+            for _ in range(10):
                 # Use video ID for comment thread
                 comment_thread_response = self.get_comment_thread(video_id, page_token)
                 if comment_thread_response["status_code"] == 200:
@@ -280,14 +278,13 @@ class YoutubeCommentScraper:
                                                         video_id,
                                                         video_title,
                                                         video_publish_date)
-                comments.extend(video_comments)
+                # comments.extend(video_comments)
+                yield from video_comments
 
                 # Update page token for next iteration
                 page_token = comment_thread_response["data"].get("nextPageToken", "")
                 if not page_token:
                     break
-            
-        return comments
 
 
     def process_comment_thread(self, comment_thread: List[Dict[str, Any]],
@@ -304,8 +301,6 @@ class YoutubeCommentScraper:
         Returns:
             List[CommentData]: A list of retrieved comments
         """
-        comments = []
-        
         batch = []
         BATCH_SIZE = 50
         for head_comment in comment_thread:
@@ -318,7 +313,7 @@ class YoutubeCommentScraper:
             batch.append(comment)
             if len(batch) >= BATCH_SIZE:
                 batch_comments = self.batch_process_comments(batch)
-                comments.extend(batch_comments)
+                yield batch_comments
                 batch = []
             
             # If the head comment has replies, get those comments
@@ -329,13 +324,11 @@ class YoutubeCommentScraper:
                 batch.append(reply)
                 if len(batch) >= BATCH_SIZE:
                     batch_comments = self.batch_process_comments(batch)
-                    comments.extend(batch_comments)
+                    yield batch_comments
                     batch = []
         if batch:
             batch_comments = self.batch_process_comments(batch)
-            comments.extend(batch_comments)
-        
-        return comments
+            yield batch_comments
     
     def batch_process_comments(self, comments: List[Dict[str, Any]]):
         """

@@ -23,34 +23,37 @@ logging.basicConfig(level=logging.INFO)
     
 
 def main(version_name, version_description):
-    scraper = YoutubeCommentScraper()
-    comment_data_list = scraper.scrape()
-    process_comments(comment_data_list, version_name, version_description)
-    
-def process_comments(comments_list: List[CommentData], version_name: str, version_description: str):
+    client = Psql()
+    try:
+        # Insert version once at the start
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        version_name_with_date = f"{version_name}:[{date}]"
+        version_fields = _construct_version(version_name_with_date, date, version_description)
+        client.insert("Versions", version_fields)
+
+        scraper = YoutubeCommentScraper()
+        for comment_batch in scraper.scrape():
+            process_comments(client, comment_batch, version_name_with_date)
+    finally:
+        client.close_db()
+
+def process_comments(client: Psql, comments_list: List[CommentData], version_name: str):
     """
     Processes the list of retrieved comments to insert into the Postgres database
-    
+
     Args:
+        client (Psql): The PostgreSQL client connection
         comments_list (List[CommentData]): The list of comments' data retrieved from src/data/api.scraper()
-        version_name (str): The version name, provided by the commandline argument
-        version_description (str): The version description, provided by the commandline argument
+        version_name (str): The version name with timestamp
     """
-    client = Psql()
     logger.info("Inserting into Postgres database...")
     try:
-        # Insert version into table
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        version_name = f"{version_name}:[{date}]"
-        version_fields = _construct_version(version_name, date, version_description)
-        
-        client.insert("Versions", version_fields)
-        
+
         for comment in comments_list:
             # Construct ChannelFields
             channel_fields = _construct_channel_fields(comment)
             result1 = client.insert("Channels", channel_fields)
-            
+
             # Construct UserFields
             user_fields = _construct_user_fields(comment, version_name)
             result2 = client.insert("Users", user_fields)
@@ -62,20 +65,18 @@ def process_comments(comments_list: List[CommentData], version_name: str, versio
             # Construct CommentFields
             comment_fields = _construct_comment_fields(comment, version_name)
             result4 = client.insert("Comments", comment_fields)
-        
+
             if not all([result1, result2, result3, result4]):
                 logger.error(f"Failed to insert into DB: "
                             f"\n\tChannels:\t{result1}"
                             f"\n\tUsers:\t{result2}"
                             f"\n\tVideos:\t{result3}"
                             f"\n\tComments:\t{result4}")
-        
+
         logger.info("Completed!")
     except Exception as e:
         logger.error(f"Error processing comments: {e}")
         raise
-    finally:
-        client.close_db()
         
 def _construct_version(version_name, date, description) -> VersionFields:
     """
