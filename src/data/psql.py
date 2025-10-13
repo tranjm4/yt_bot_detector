@@ -7,7 +7,7 @@ This module contains functions used to interface with the PostgreSQL database
 import psycopg2
 import os
 
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, Optional, List, Generator
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -75,6 +75,10 @@ class Psql:
     
     def close_db(self):
         self.connection.close()
+
+    def rollback(self):
+        """Rollback the current transaction"""
+        self.connection.rollback()
         
     def insert(self, table: str, data: BaseModel, on_conflict: str = "NOTHING"):
         """
@@ -167,3 +171,38 @@ class Psql:
         Given a username, gets all comments from the user
         """
         pass
+    
+    def query_iter(self, query: str, params: Tuple = None) -> Generator:
+        """
+        Runs a specified query and yields results one at a time.
+        
+        Args:
+            query (str): SQL query string
+            params (Optional[Tuple]): Tuple of parameters for parameterized queries
+            
+        Yields:
+            Tuple: Each row form the query result
+        """
+        with self.connection.cursor() as cursor:
+            cursor.execute(query, params)
+            
+            result = cursor.fetchone()
+            while result:
+                yield result
+                result = cursor.fetchone()
+                
+    def query(self, query: str, params: Tuple = None) -> List[Tuple]:
+        """
+        Runs a specified query and returns all results at once.
+        
+        Args:
+            query (str): SQL query string
+            params (Optional[Tuple]): Tuple of parameters for parameterized queries
+            
+        Returns:
+            List[Tuple]: All rows from the query result
+        """
+        with self.connection.cursor() as cursor:
+            cursor.execute(query, params)
+            
+            return cursor.fetchall()
