@@ -105,7 +105,8 @@ def _construct_channel_fields(comment_data: CommentData) -> ChannelFields:
         ChannelFields: A BaseModel that complies with the PSQL Channels table
     """
     return ChannelFields(
-        channelId=comment_data["video_channel_id"]
+        channelId=comment_data["video_channel_id"],
+        channelName=comment_data["video_channel_name"]
     )
     
 def _construct_user_fields(comment_data: CommentData, version_name: str) -> UserFields:

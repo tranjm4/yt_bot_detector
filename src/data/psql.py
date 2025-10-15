@@ -19,6 +19,7 @@ class VersionFields(BaseModel):
 
 class ChannelFields(BaseModel):
     channelId: str = Field(max_length=30)
+    channelName: str = Field(max_length=24)
 
 class UserFields(BaseModel):
     userId: str = Field(max_length=50)
