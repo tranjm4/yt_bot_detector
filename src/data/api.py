@@ -20,12 +20,16 @@ from functools import wraps
 class CommentData(TypedDict):
     # Channels Table
     video_channel_id: str
+    video_channel_name: str
+    
     # Users Table
+    
     author_channel_id: str
     author_display_name: str
     author_created_at: str | datetime
     author_sub_count: int
     author_video_count: int
+    
     # Videos Table
     video_id: str
     video_title: str
@@ -41,13 +45,12 @@ class CommentData(TypedDict):
     text: str
 
 CHANNEL_HANDLES = [
-    "msnbc",
     "cnn",
     "FoxNews",
     "briantylercohen",
-    "DailyWirePlus",
+    "TuckerCarlson",
+    "msnbc",
     "ABCNews",
-    "TuckerCarlson"
 ]
 
 API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -182,6 +185,27 @@ class YoutubeCommentScraper:
         return comment_thread_response
 
     @api_status_handler
+    def get_video_details(self, video_ids: str | List[str]):
+        """
+        Retrieves video details given video ID(s)
+        (https://developers.google.com/youtube/v3/docs/videos/list)
+
+        Args:
+            video_ids (str | List[str]): Single video ID or list of video IDs (max 50)
+        """
+        if isinstance(video_ids, str):
+            video_ids = [video_ids]
+
+        request = self.client.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=",".join(video_ids),
+            maxResults=50
+        )
+
+        video_response = request.execute()
+        return video_response
+
+    @api_status_handler
     def get_commenter_details(self, account_id: str | List[str]):
         """
         Retrieves commenter details given a single account id or list of account ids
@@ -222,7 +246,7 @@ class YoutubeCommentScraper:
             # Retrieve uploads ID and get videos
             playlist_id = channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
             page_token = None
-            for _ in range(2): # Limit to 40 videos per channel (2 page × 20 videos)
+            for _ in range(3): # Limit to 60 videos per channel (3 pages × 20 videos)
                 uploads_response = self.get_channel_uploads(playlist_id, page_token)                      
                 if uploads_response["status_code"] == 200:
                     uploads = uploads_response["data"]["items"]
@@ -246,25 +270,46 @@ class YoutubeCommentScraper:
     def process_videos(self, uploads: List[Dict[str, Any]]) -> Generator:
         """
         Helper function for parsing videos from a list of uploads from a channel.
-        
+
         Args:
             uploads (List[Dict]): A list of PlaylistItem Resources
                 (https://developers.google.com/youtube/v3/docs/playlistItems#resource)
-        
+
         Returns:
             Generator[List[CommentData]]: A list of all retrieved comments
         """
+        # Batch fetch video details to get accurate publish dates
+        video_ids = [video_entry["contentDetails"]["videoId"] for video_entry in uploads]
+        video_details_response = self.get_video_details(video_ids)
+
+        if video_details_response["status_code"] != 200:
+            logger.error("Failed to fetch video details")
+            return
+
+        # Create a map of video_id -> video details for quick lookup
+        video_details_map = {
+            video["id"]: video for video in video_details_response["data"]["items"]
+        }
+
         for video_entry in uploads:
             # Get an entry's video ID
             video_id = video_entry["contentDetails"]["videoId"]
-            video_title = video_entry["snippet"]["title"]
-            video_publish_date = video_entry["snippet"]["publishedAt"]
-            
+            video_detail = video_details_map.get(video_id)
+
+            if not video_detail:
+                logger.warning(f"No video details found for {video_id}, skipping...")
+                continue
+
+            video_title = video_detail["snippet"]["title"]
+            video_publish_date = video_detail["snippet"]["publishedAt"]
+            video_channel_id = video_detail["snippet"]["channelId"]
+            video_channel_name = video_detail["snippet"]["channelTitle"]
+
             logger.info(f"Retrieving from video: [{video_title}]")
-            
-            # Limit to 1000 comments per video
+
+            # Limit to 800 comments per video
             page_token = None
-            for _ in range(10):
+            for _ in range(8):
                 # Use video ID for comment thread
                 comment_thread_response = self.get_comment_thread(video_id, page_token)
                 if comment_thread_response["status_code"] == 200:
@@ -272,12 +317,14 @@ class YoutubeCommentScraper:
                 else:
                     logger.info(f"Video [{video_id}] has comments disabled. Skipping...")
                     continue
-                
+
                 # Retrieve all comments from video's comment thread
                 video_comments = self.process_comment_thread(comment_thread,
                                                         video_id,
                                                         video_title,
-                                                        video_publish_date)
+                                                        video_publish_date,
+                                                        video_channel_id,
+                                                        video_channel_name)
                 # comments.extend(video_comments)
                 yield from video_comments
 
@@ -289,38 +336,47 @@ class YoutubeCommentScraper:
 
     def process_comment_thread(self, comment_thread: List[Dict[str, Any]],
                             video_id: str, video_title: str,
-                            video_publish_date: str | datetime
-                            ) -> List[CommentData]:
+                            video_publish_date: str | datetime,
+                            video_channel_id: str,
+                            video_channel_name: str
+                            ) -> Generator:
         """
         Helper function for parsing comments from a single video's comment thread.
         Retrieves head comments and their replies, if any.
-        
+
         Args:
             comment_thread (List[Dict]): A list of comments from the comment thread
-            
+            video_id (str): The video ID
+            video_title (str): The video title
+            video_publish_date (str | datetime): The video publish date
+            video_channel_id (str): The video's channel ID
+            video_channel_name (str): The channel name that published the video
+
         Returns:
             List[CommentData]: A list of retrieved comments
         """
         batch = []
         BATCH_SIZE = 50
         for head_comment in comment_thread:
-            # Get video ID
-            video_id = head_comment["snippet"]["videoId"]
-            
             # Get head comment's comment data
+            top_level_comment_id = head_comment["id"]
             comment = head_comment["snippet"]["topLevelComment"]
-            comment = {**comment, "videoId": video_id, "videoTitle": video_title, "videoPublishDate": video_publish_date}
+            comment = {**comment, "videoId": video_id, "videoTitle": video_title,
+                      "videoPublishDate": video_publish_date, "videoChannelId": video_channel_id,
+                      "parentId": None, "videoChannelName": video_channel_name}
             batch.append(comment)
             if len(batch) >= BATCH_SIZE:
                 batch_comments = self.batch_process_comments(batch)
                 yield batch_comments
                 batch = []
-            
+
             # If the head comment has replies, get those comments
             replies = head_comment.get("replies", {})
             thread_replies = replies.get("comments", [])
             for reply in thread_replies:
-                reply = {**reply, "videoId": video_id, "videoTitle": video_title, "videoPublishDate": video_publish_date}
+                reply = {**reply, "videoId": video_id, "videoTitle": video_title,
+                        "videoPublishDate": video_publish_date, "videoChannelId": video_channel_id,
+                        "parentId": top_level_comment_id, "videoChannelName": video_channel_name}
                 batch.append(reply)
                 if len(batch) >= BATCH_SIZE:
                     batch_comments = self.batch_process_comments(batch)
@@ -363,6 +419,7 @@ class YoutubeCommentScraper:
         for comment in comments:
             # video_channel_id should come from the video snippet we added
             video_channel_id = comment.get("videoChannelId", comment["snippet"].get("videoOwnerChannelId", ""))
+            video_channel_name = comment.get("videoChannelName")
 
             # Extract author channel ID
             author_channel_id_raw = comment["snippet"]["authorChannelId"]
@@ -381,7 +438,7 @@ class YoutubeCommentScraper:
             
             comment_id = comment["id"]
             head_comment_id = comment.get("parentId", None)
-            is_reply = head_comment_id != "" or head_comment_id != None
+            is_reply = head_comment_id is not None and head_comment_id != ""
             published_at = comment["snippet"]["publishedAt"]
             updated_at = comment["snippet"]["updatedAt"]
             like_count = comment["snippet"]["likeCount"]
@@ -395,6 +452,7 @@ class YoutubeCommentScraper:
             
             comment_data = CommentData(
                 video_channel_id = video_channel_id,
+                video_channel_name = video_channel_name,
                 
                 author_channel_id = author_channel_id,
                 author_display_name = author_display_name,
