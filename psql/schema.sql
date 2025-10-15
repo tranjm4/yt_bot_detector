@@ -15,7 +15,8 @@ CREATE TABLE YT.Versions (
 );
 
 CREATE TABLE YT.Channels (
-    channelId VARCHAR(40) PRIMARY KEY
+    channelId VARCHAR(40) PRIMARY KEY,
+    channelName VARCHAR(24) NOT NULL
 );
 
 CREATE TABLE YT.Users (
