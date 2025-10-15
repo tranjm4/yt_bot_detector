@@ -28,7 +28,7 @@ class TestPsql:
     
     @pytest.fixture
     def mock_channel_data(self):
-        return ('UC123',)
+        return ('UC123', "testChannel")
 
     @pytest.fixture
     def mock_user_data(self):
@@ -53,7 +53,8 @@ class TestPsql:
     @pytest.fixture
     def mock_channel_insert(self):
         return {
-            "channelId": "UC123"
+            "channelId": "UC123",
+            "channelName": "testChannel"
         }
         
     @pytest.fixture
