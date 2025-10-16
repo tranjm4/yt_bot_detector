@@ -64,5 +64,47 @@ services:
       psql:
         condition: service_healthy
 
+  feature-pipeline:
+    container_name: yt-feature-pipeline
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./scripts/processing/Dockerfile
+    depends_on:
+      psql:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./feature_cache:/app/feature_cache
+
+  baseline-model:
+    container_name: yt-baseline-model
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./src/model/Dockerfile.isoforest
+    depends_on:
+      psql:
+        condition: service_healthy
+    volumes:
+      - ./results:/app/results
+      - ./data:/app/data
+
+  umap:
+    container_name: yt-umap
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./src/model/Dockerfile.umap
+    depends_on:
+      psql:
+        condition: service_healthy
+    volumes:
+      - ./results:/app/results
+      - ./data:/app/data
+
 volumes:
   db_data:
