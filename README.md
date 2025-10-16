@@ -10,6 +10,13 @@ This project primarily focuses on **unsupervised learning models** for **anomaly
 
 ***
 
+## Todo:
+
+- Manually review UMAP outputs and clusters for perceived patterns in clustering
+- Explore graph features and potential coordinated user behavior
+
+***
+
 ## Example outputs
 
 ### Oct 16, 2025
@@ -27,7 +34,7 @@ This was on the first configuration of my data. The data contained very high out
 We see much more defined clusters. Accounting for the heavy-tailedness of the data (the extreme outliers), I implemented optional log transforms into my pipeline, applying them on those skewed features. Values are much more bounded within reasonable values (e.g., -2 to 4).
 
 
-
+I plan on manually reviewing the properties of these clusters soon.
 
 
 ***
