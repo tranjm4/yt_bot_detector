@@ -76,13 +76,11 @@ Thus, the data collected revolves around finding per-user behavior, described by
 
 As a learning programmer, data scientist, and machine learning engineer, here are some challenges and core questions I've faced (previously and currently) throughout my experiences working on this project:
 
-### 1. Unsupervised Learning
+### a. Unsupervised Learning
 
-At the beginning of the project, I was heavily considering whether to approach my project as a ***semi-supervised learning problem*** (where I would manually label a small set of comments) or ***unsupervised learning problem***. The main reason against semi-supervised learning was that I would instill my own biases on what I perceive to be bot comments. 
+At the beginning of the project, I was heavily considering whether to approach my project as a ***semi-supervised learning problem*** (where I would manually label a small set of comments) or ***unsupervised learning problem***. The main reason against semi-supervised learning was that I would instill my own biases on what I perceive to be bot comments. Thus, unsupervised learning became my main objective.
 
-Thus, unsupervised learning was the main 
-
-### 2. API Rate Limiting
+### b. API Rate Limiting
 
 Although the Youtube API offers a very generous 10,000 API units per day (e.g., 1 request = 1 unit), it still posed problems when trying to collect a sufficient amount of data.
 
@@ -90,9 +88,27 @@ The primary bottleneck I faced was having to collect individual user data (i.e.,
 
 <u>**Solution**</u>: I was able to optimize my API collection modules to batch process users; the API allowed batch requesting up to 50 users per request. This reduced API costs by 50x. I was able to collect over 150k comments under the daily limits.
 
-### 3. Feature Engineering
+### c. Feature Engineering
 
-Upon 
+Upon some initial exploratory data analysis, I found some interesting features. One example was **comment latency**, i.e., the delay from video upload to comment post.
+
+Taking the standard deviation / variance of comment latency for each user and sorting in ascending order, we find some users who have commented multiple times with very low standard deviation in comment latency (some with 0). This is highly unusual behavior.
+
+Normally, I would have thrown the latency into a standard normalization scaler and hoped the model learns the feature, but since we're working in an unsupervised learning context, I had to be more careful with handling the data. I wanted to scale this feature in a way that:
+
+1. Isolates the std deviation when values are low
+2. Differentiate values with low vs high sample size
+
+Thus, I propose the following heuristic:
+
+$$\frac{C_1log_b(C_2n)}{\sigma + \epsilon}$$
+
+- $n$: sample size, i.e., comment count of a user
+- $\sigma$: the standard deviation of comment latency
+- $\epsilon$: a small constant epsilon used to prevent division by zero errors
+- $b, C_1, C_2$: constants for modification
+
+Further experimentation on the choice of constants is needed to observe effects on model performance.
 
 ***
 
