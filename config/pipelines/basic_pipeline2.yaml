@@ -1,0 +1,95 @@
+# Basic Feature Engineering Pipeline Configuration #2
+# Run with: python scripts/run_pipeline.py config/pipelines/basic_pipeline2.yaml
+# Or with Docker: docker-compose rn --rm feature-pipeline config/pipelines/basic_pipeline2.yaml
+
+name: "basic_pipeline"
+version: "v2.0"
+description: "Same as basic_pipeline v1.0, but with an increased epsilon term for increased damping"
+
+# Database configuration
+database:
+  # Will use environment variables by default
+  # Optionally override here
+  use_env: true
+
+# Cache configuration
+cache:
+  enabled: true
+  directory: "./feature_cache"
+  clear_before_run: false  # Set to true to force recompute
+
+# Data filtering
+data:
+  min_comments: 5  # Minimum comments per user to include
+  user_ids: null   # Optional: list of specific user IDs, or null for all
+  sample_size: null  # Optional: random sample of users
+
+# Feature groups
+feature_groups:
+  - name: "counting_features"
+    features:
+      - comment_count
+    params:
+      min_comments: 5
+    preprocessing:
+      scaling_method: "robust"
+      impute_strategy: "median"
+      drop_if_null_pct: 0.5
+
+  - name: "latency_mean"
+    features:
+      - comment_latency
+    params:
+      min_comments: 5
+      stats: ["mean", "counts"]
+    preprocessing:
+      scaling_method: "robust"
+      impute_strategy: "median"
+      drop_if_null_pct: 0.5
+
+  - name: "latency_variance_score"
+    features:
+      - comment_latency_variance_score
+    params:
+      min_comments: 5
+    preprocessing:
+      scaling_method: "robust"
+      impute_strategy: "median"
+      drop_if_null_pct: 0.5
+
+  - name: "text_features"
+    features:
+      - text_length_stats
+      - text_repetition_stats
+    params:
+      min_comments: 5
+    preprocessing:
+      scaling_method: "standard"
+      impute_strategy: "median"
+      drop_if_null_pct: 0.5
+
+  - name: "behavioral_features"
+    features:
+      - channel_diversity
+    params:
+      min_comments: 5
+    preprocessing:
+      scaling_method: "minmax"
+      impute_strategy: "median"
+      drop_if_null_pct: 0.5
+
+# Train/test split configuration
+split:
+  enabled: false  # Set to true to create train/test split
+  test_size: 0.2
+  random_state: 42
+  stratify: null  # Column name to stratify on (for labeled data)
+
+# Output configuration
+output:
+  directory: "./data/basic_pipeline_v2_0"
+  formats:
+    - csv
+    # - parquet  # Uncomment for parquet output
+  save_metadata: true
+  save_profile: true  # Save feature profiling report
