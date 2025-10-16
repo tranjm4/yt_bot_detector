@@ -1,0 +1,16 @@
+config_path: config/pipelines/basic_pipeline2.yaml
+description: Same as basic_pipeline v1.0, but with an increased epsilon term for increased
+  damping
+feature_groups:
+- counting_features
+- latency_mean
+- latency_variance_score
+- text_features
+- behavioral_features
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-16T05:20:24.813316'
+shapes:
+  all:
+  - 3970
+  - 11
+version: v2.0

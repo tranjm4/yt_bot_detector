@@ -1,0 +1,16 @@
+config_path: config/pipelines/basic_pipeline5.yaml
+description: Basic pipeline like v4, with log transforms included in select features
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- temporal_features
+- behavioral_features
+- replies
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-16T07:58:55.867615'
+shapes:
+  all:
+  - 25993
+  - 12
+version: v5.0

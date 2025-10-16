@@ -1,0 +1,16 @@
+config_path: config/pipelines/basic_pipeline4.yaml
+description: Basic pipeline without basic text length features
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- temporal_features
+- behavioral_features
+- replies
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-16T07:51:52.104512'
+shapes:
+  all:
+  - 25993
+  - 11
+version: v4.0

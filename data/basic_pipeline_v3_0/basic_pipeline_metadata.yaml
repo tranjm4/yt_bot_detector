@@ -1,0 +1,16 @@
+config_path: config/pipelines/basic_pipeline3.yaml
+description: Same as basic_pipeline v2.0, but without mean comment latency increased
+  epsilon term for increased damping
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- temporal_features
+- behavioral_features
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-16T07:10:54.405156'
+shapes:
+  all:
+  - 3970
+  - 12
+version: v3.0
