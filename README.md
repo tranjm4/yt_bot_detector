@@ -1,6 +1,6 @@
 # Youtube Bot Detector
 
-[](https://github.com/tranjm4/yt_bot_detector/blob/main/public/img.png)
+![Comic graphic of laptop observed by a magnifying glass. Inside of it is a robot face. A text bubble from the robot asks the question: "How to identify bots in Youtube?"](https://github.com/tranjm4/yt_bot_detector/blob/main/public/img.png?raw=true)
 
 This is a machine learning module used to identify bots in Youtube comments from news outlets.
 
