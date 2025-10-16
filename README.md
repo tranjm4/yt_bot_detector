@@ -4,7 +4,7 @@
 
 This is a machine learning module used to identify bots in Youtube comments from news outlets.
 
-As the prevalence of AI 'slop' increases, it is important for data scientists and others in the world of data to be able to discern what is real or fake to improve the quality of data for future models.
+As the prevalence of AI 'slop' increases, it is important for data scientists and others in the world of data to be able to discern what is real or fake to improve the quality of data for future models. The problem of AI 'slop' is also important in the context of political discourse, as today's increasing polarity of political media incentivizes bad actors to automate divisive rhetoric via bots.
 
 This project primarily focuses on **unsupervised learning models** for **anomaly detection**
 
