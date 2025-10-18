@@ -44,7 +44,8 @@ I fitted an isolation forest on [data/basic_pipeline_v5_0](https://github.com/tr
 The anomalies detected by the isolation forest (in red) are very clearly isolated in their own cluster by the UMAP model.
 
 Upon comparing summary statistics between the anomalies and the overall data, the following differences is as follows:
-    - `duplicate_comment_count`, `unique_duplicate_comments`, `reply_count`, and `unique_channel_count` were relatively stronger indicators. The anomalies yielded a mean difference greater than 1-2 standard deviations from the overall mean.
+
+- `duplicate_comment_count`, `unique_duplicate_comments`, `reply_count`, and `unique_channel_count` were relatively stronger indicators. The anomalies yielded a mean difference greater than 1-2 standard deviations from the overall mean.
 
 I find this result particularly interesting, though I remain cautious and need to evaluate this model on more configurations of the features. It could be picking up the wrong kinds of patterns in the features.
 
