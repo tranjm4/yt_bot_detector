@@ -2,6 +2,8 @@
 
 ![Comic graphic of laptop observed by a magnifying glass. Inside of it is a robot face. A text bubble from the robot asks the question: "How to identify bots in Youtube?"](https://github.com/tranjm4/yt_bot_detector/blob/main/public/img.png?raw=true)
 
+![UMAP visualization with colored labels; many circular clusters, with one oblong-shaped cluster. The oblong cluster is labeled as an 'anomaly' based on isolation forest predictions. The anomalies appear to be strongly isolated from the normal points, with a few normal points included in the anomaly cluster](https://github.com/tranjm4/yt_bot_detector/blob/main/results/model5/umap_if_visualization.png?raw=true)
+
 This is a machine learning module used to identify bots in Youtube comments from news outlets.
 
 As the prevalence of AI 'slop' increases, it is important for data scientists and others in the world of data to be able to discern what is real or fake to improve the quality of data for future models. The problem of AI 'slop' is also important in the context of political discourse, as today's increasing polarity of political media incentivizes bad actors to automate divisive rhetoric via bots.
