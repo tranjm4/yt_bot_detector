@@ -32,7 +32,7 @@ def load_data(data_path: str) -> pd.DataFrame:
     return df
 
 
-def train_isolation_forest(X: pd.DataFrame, contamination: float = 0.1,
+def train_isolation_forest(X: pd.DataFrame,
                            random_state: int = 42) -> IsolationForest:
     """
     Train Isolation Forest model
@@ -46,11 +46,10 @@ def train_isolation_forest(X: pd.DataFrame, contamination: float = 0.1,
         Trained IsolationForest model
     """
     print(f"\nTraining Isolation Forest...")
-    print(f"  Contamination: {contamination:.1%}")
     print(f"  Random state: {random_state}")
 
     model = IsolationForest(
-        contamination=contamination,
+        contamination='auto',
         random_state=random_state,
         n_estimators=100,
         max_samples='auto',
@@ -61,7 +60,7 @@ def train_isolation_forest(X: pd.DataFrame, contamination: float = 0.1,
 
     model.fit(X)
 
-    print(f"✓ Model trained with {model.n_estimators} trees")
+    print(f"Model trained with {model.n_estimators} trees")
     return model
 
 
@@ -98,7 +97,7 @@ def save_results(df: pd.DataFrame, predictions: np.ndarray,
     results = results.sort_values('anomaly_score')
 
     results.to_csv(output_path, index=False)
-    print(f"\n✓ Results saved to {output_path}")
+    print(f"\nResults saved to {output_path}")
 
     # Show top 10 most anomalous users
     print("\nTop 10 most anomalous users:")
@@ -132,7 +131,7 @@ def plot_anomaly_distribution(scores: np.ndarray, predictions: np.ndarray,
     plt.tight_layout()
     plot_path = Path(output_dir) / 'anomaly_score_distribution.png'
     plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-    print(f"✓ Plot saved to {plot_path}")
+    print(f"Plot saved to {plot_path}")
     plt.close()
 
 
@@ -160,12 +159,6 @@ def main():
     parser.add_argument(
         'data_path',
         help='Path to processed feature CSV file'
-    )
-    parser.add_argument(
-        '--contamination',
-        type=float,
-        default=0.1,
-        help='Expected proportion of outliers (default: 0.1)'
     )
     parser.add_argument(
         '--output-dir',
@@ -203,7 +196,7 @@ def main():
     print(f"Features: {feature_cols}")
 
     # Train model
-    model = train_isolation_forest(X, args.contamination, args.random_state)
+    model = train_isolation_forest(X, args.random_state)
 
     # Predict
     predictions, scores = predict_anomalies(model, X)
@@ -219,7 +212,7 @@ def main():
     plot_anomaly_distribution(scores, predictions, output_dir)
 
     print(f"\n{'='*60}")
-    print("✓ Baseline Isolation Forest model complete!")
+    print("Baseline Isolation Forest model complete!")
     print(f"{'='*60}")
 
 
