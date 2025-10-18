@@ -1,0 +1,20 @@
+
+model_type: "isolation_forest"
+
+metadata:
+  name: "model 4"
+  version: "v1.0"
+  description: "Isolation forest and UMAP trained on basic_pipeline_v4_0"
+
+config:
+  data: "data/basic_pipeline_v4_0/basic_pipeline_all.csv"
+  outfile_dir: "results/model4"
+  random_seed: 42
+  ignore_cols:
+    - "userId"
+
+  umap:
+    n_neighbors: 15
+    min_dist: 0.3
+    metric: "euclidean"
+
