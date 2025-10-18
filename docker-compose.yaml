@@ -78,6 +78,7 @@ services:
       - ./data:/app/data
       - ./feature_cache:/app/feature_cache
 
+  # Usage: docker-compose run --rm baseline-model [datapath]
   baseline-model:
     container_name: yt-baseline-model
     env_file:
@@ -103,6 +104,18 @@ services:
       psql:
         condition: service_healthy
     volumes:
+      - ./results:/app/results
+      - ./data:/app/data
+
+  model:
+    container_name: yt-model
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./scripts/models/Dockerfile
+    volumes:
+      - ./config/models:/app/config/models
       - ./results:/app/results
       - ./data:/app/data
 
