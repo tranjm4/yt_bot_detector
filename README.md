@@ -39,7 +39,7 @@ I plan on manually reviewing the properties of these clusters soon.
 ### Oct 18, 2025
 I fitted an isolation forest on [data/basic_pipeline_v5_0](https://github.com/tranjm4/yt_bot_detector/blob/main/config/pipelines/basic_pipeline.yaml), using its labels to help visualize UMAP. I fitted both models independently to see if they are in agreement with each other. Below is the result:
 
-![UMAP visualization with colored labels; many circular clusters, with one oblong-shaped cluster. The oblong cluster is labeled as an 'anomaly' based on isolation forest predictions. The anomalies appear to be strongly isolated from the normal points, with a few normal points included in the anomaly cluster](https://github.com/tranjm4/yt_bot_detector/blob/main/results/baseline/umap_if_visualization.png?raw=true)
+![UMAP visualization with colored labels; many circular clusters, with one oblong-shaped cluster. The oblong cluster is labeled as an 'anomaly' based on isolation forest predictions. The anomalies appear to be strongly isolated from the normal points, with a few normal points included in the anomaly cluster](https://github.com/tranjm4/yt_bot_detector/blob/main/results/model5/umap_if_visualization.png?raw=true)
 
 The anomalies detected by the isolation forest (in red) are very clearly isolated in their own cluster by the UMAP model.
 
