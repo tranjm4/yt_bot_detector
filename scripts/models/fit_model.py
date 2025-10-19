@@ -4,7 +4,10 @@ File: scripts/models/run_models.py
 This script handles model fitting and evaluation given various configurations.
 The standard approach is as follows:
     1. Fit an isolation forest on the data
-    2. 
+    2. Verify consistency with UMAP dimensionality reduction
+    3. Verify stability across multiple isolation forest initializations
+    4. Verify consistency across multiple methods
+    5. Evaluates differences in features between anomalies and non-anomalies
 """
 
 from argparse import ArgumentParser
@@ -22,6 +25,7 @@ import numpy as np
 
 import src.model.isolation_forest_baseline as iso_forest
 import src.model.umap as um
+from src.eval.features_eval import FeatureEvaluation
 
 import logging
 logger = logging.getLogger(__name__)
@@ -159,6 +163,7 @@ def visualize_umap_with_labels(embedding_df: pd.DataFrame, outfile_dir: Path):
     plt.savefig(viz_path, dpi=300, bbox_inches='tight')
     logger.info(f"Visualization saved to: {viz_path}")
     plt.close()
+    
 def train_isolation_forest(config: ModelConfig) -> tuple[iso_forest.IsolationForest, pd.DataFrame, np.ndarray]:
     # Load data
     data_path = config["data"]
@@ -240,6 +245,18 @@ def fit_umap(df: pd.DataFrame, X: np.ndarray, config: ModelConfig):
 
     return reducer, embedding_df
 
+def run_feature_evaluations(config: ModelConfig, outfile_dir: str):
+    """
+    Runs various feature evaluations (see src/eval/features_eval.py)
+    """
+    data_path = config["data"]
+    df = load_data(data_path)
+
+    evaluation = FeatureEvaluation(data_path=data_path, outdir=outfile_dir, df=df)
+    evaluation.evaluate()
+
+    return
+
 def main():
     parser = ArgumentParser(description="Script for running and visualizing \
                             model fittings (e.g., UMAP, isolation forests)")
@@ -271,7 +288,14 @@ def main():
     logger.info("STEP 2: Fitting UMAP with Isolation Forest labels")
     logger.info("=" * 60)
     umap_model, umap_embedding = fit_umap(df_with_labels, X, config["config"])
-
+    
+    # Run Feature Evaluations
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("STEP 3: Running Feature Evaluations")
+    logger.info("=" * 60)
+    run_feature_evaluations(config["config"], outfile_dir)
+    
     logger.info("")
     logger.info("=" * 60)
     logger.info("Pipeline complete!")
