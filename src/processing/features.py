@@ -567,13 +567,17 @@ def get_temporal_co_commenting_clusters(psql_client, time_window_minutes: int = 
     Identifies users who repeatedly comment within similar timeframes across multiple videos.
     This can detect coordinated behavior or bot networks.
 
+    Returns per-user aggregated features from temporal co-commenting relationships.
+
     Args:
         psql_client: Database connection
         time_window_minutes (int): Time window to consider comments as "co-occurring"
         min_co_occurrences (int): Minimum number of videos where users co-comment
 
     Returns:
-        pd.DataFrame: With columns ["userId1", "userId2", "coCommentCount", "sharedVideos"]
+        pd.DataFrame: With columns ["userId", "temporal_cocomment_partners",
+                      "temporal_cocomment_total", "temporal_cocomment_mean",
+                      "temporal_cocomment_max"]
     """
     query = f"""
     WITH user_comment_times AS (
@@ -602,5 +606,42 @@ def get_temporal_co_commenting_clusters(psql_client, time_window_minutes: int = 
 
     result = psql_client.query(query, (time_window_minutes, min_co_occurrences))
 
-    return pd.DataFrame(result,
-                       columns=["userId1", "userId2", "coCommentCount", "sharedVideos"])
+    edges_df = pd.DataFrame(result,
+                           columns=["userId1", "userId2", "coCommentCount", "sharedVideos"])
+
+    # Handle empty results
+    if len(edges_df) == 0:
+        return pd.DataFrame(columns=["userId", "temporal_cocomment_partners",
+                                    "temporal_cocomment_total", "temporal_cocomment_mean",
+                                    "temporal_cocomment_max"])
+
+    # Transform edge data into per-user features
+    # Count relationships and sum co-comment counts for each user
+    user1_stats = edges_df.groupby('userId1').agg({
+        'userId2': 'count',  # number of co-commenting relationships
+        'coCommentCount': ['sum', 'mean', 'max']
+    }).reset_index()
+    user1_stats.columns = ['userId', 'temporal_cocomment_partners',
+                           'temporal_cocomment_total', 'temporal_cocomment_mean',
+                           'temporal_cocomment_max']
+
+    user2_stats = edges_df.groupby('userId2').agg({
+        'userId1': 'count',
+        'coCommentCount': ['sum', 'mean', 'max']
+    }).reset_index()
+    user2_stats.columns = ['userId', 'temporal_cocomment_partners',
+                           'temporal_cocomment_total', 'temporal_cocomment_mean',
+                           'temporal_cocomment_max']
+
+    # Combine both directions (userId1 and userId2)
+    combined = pd.concat([user1_stats, user2_stats], ignore_index=True)
+
+    # Aggregate by userId (sum partners, mean of means, max of maxes)
+    user_features = combined.groupby('userId').agg({
+        'temporal_cocomment_partners': 'sum',
+        'temporal_cocomment_total': 'sum',
+        'temporal_cocomment_mean': 'mean',
+        'temporal_cocomment_max': 'max'
+    }).reset_index()
+
+    return user_features
