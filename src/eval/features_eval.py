@@ -9,8 +9,10 @@ feature set provided.
 from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.inspection import permutation_importance
 
 import os
+import json
 from matplotlib_venn import venn3
 
 import pandas as pd
@@ -19,9 +21,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 class FeatureEvaluation:
-    def __init__(self, data_path: str):
-        self.df = pd.read_csv(data_path)
+    def __init__(self, data_path: str, outdir: str, df=None):
+        if df is not None:
+            self.df = df
+        else:
+            self.df = pd.read_csv(data_path)
         self.X = self.df.drop(["userId"], axis=1)
+        self.outdir = outdir
         
     def jaccard_similarity(self, num_iters: int = 10, top_k: int = 50,
                            *args, **kwargs):
@@ -98,30 +104,56 @@ class FeatureEvaluation:
             "all_three": all_three
         }
         
-    def feature_analysis(self):
+    def feature_analysis(self, n_repeats=10):
         """
         Performs comparisons in feature statistics
-        between anomaly and non-anomaly features
+        between anomaly and non-anomaly features.
+
+        Returns standardized mean differences (similar to Cohen's d)
         """
         copy_df = self.df.copy()
         if_model = IsolationForest()
-        copy_df["labels"] = if_model.fit_predict(self.X)
-        
-        # Take the differences in summary statistics across features
+        fit_if_model = if_model.fit(self.X)
+        copy_df["labels"] = fit_if_model.predict(self.X)
+
+        # Compute standardized differences
         anomalies = copy_df[copy_df["labels"] == -1]
         normals = copy_df[copy_df["labels"] != -1]
+
+        anomaly_means = anomalies.describe().loc["mean"]
+        normal_means = normals.describe().loc["mean"]
+        std = copy_df.describe().loc["std"]
+
+        standardized_diff = (anomaly_means - normal_means) / std
         
-        differences = anomalies.describe() - normals.describe()
+        # Compute permutation importance
+        # Note: score_samples already returns negative scores (lower = more anomalous)
+        # So we want to maximize the negative score (more negative = better anomaly detection)
+        # Scoring function must accept (estimator, X, y) even though y is unused
+        result = permutation_importance(
+            fit_if_model, X=self.X, y=None,
+            scoring=lambda est, X, y: est.score_samples(X).mean(),
+            n_repeats=n_repeats,
+            random_state=42
+        )
+
+        perm_importance = pd.Series(result.importances_mean, index=self.X.columns)
+        perm_std = pd.Series(result.importances_std, index=self.X.columns)
+
+        return {
+            "permutation_importance": perm_importance,
+            "permutation_std": perm_std,
+            "standardized_diff": standardized_diff
+        }
         
-        return differences
         
         
-    def save_report(self, data: dict, outdir: str):
+    def save_report(self, data: dict):
         """
         Saves the values to the specified outdirectory
         """
 
-        os.makedirs(outdir, exist_ok=True)
+        os.makedirs(self.outdir, exist_ok=True)
 
         # 1. Line plot of Jaccard similarities
         plt.figure(figsize=(10, 6))
@@ -130,7 +162,7 @@ class FeatureEvaluation:
         plt.ylabel('Jaccard Similarity', fontsize=12)
         plt.title('Jaccard Similarity Across Different K Values', fontsize=14)
         plt.grid(True, alpha=0.3)
-        plt.savefig(os.path.join(outdir, 'jaccard_similarity.png'), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(self.outdir, 'jaccard_similarity.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
         # 2. Venn diagram for ensemble overlaps
@@ -159,47 +191,67 @@ class FeatureEvaluation:
             )
 
             plt.title('Ensemble Model Agreement on Anomalies', fontsize=14)
-            plt.savefig(os.path.join(outdir, 'ensemble_venn.png'), dpi=300, bbox_inches='tight')
+            plt.savefig(os.path.join(self.outdir, 'ensemble_venn.png'), dpi=300, bbox_inches='tight')
             plt.close()
 
         # 3. Bar plots for feature analysis
         if 'feature_analysis' in data and data['feature_analysis'] is not None:
             feature_data = data['feature_analysis']
 
-            # Assuming feature_data is a DataFrame with differences
-            if isinstance(feature_data, pd.DataFrame):
-                # Use 'mean' row from describe() output
-                if 'mean' in feature_data.index:
-                    differences = feature_data.loc['mean'].sort_values(key=abs, ascending=False)
+            # feature_data is now a dict with multiple metrics
+            if isinstance(feature_data, dict):
+                # Plot standardized differences
+                if 'standardized_diff' in feature_data:
+                    differences = feature_data['standardized_diff'].sort_values(key=abs, ascending=False)
 
                     plt.figure(figsize=(12, max(6, len(differences) * 0.3)))
                     colors = ['red' if d < 0 else 'green' for d in differences]
                     plt.barh(range(len(differences)), differences.values, color=colors, alpha=0.7)
                     plt.yticks(range(len(differences)), differences.index)
-                    plt.xlabel('Mean Difference (Anomaly - Normal)', fontsize=12)
+                    plt.xlabel('Standardized Difference (Anomaly - Normal) / σ', fontsize=12)
                     plt.ylabel('Features', fontsize=12)
-                    plt.title('Feature Value Differences: Anomalies vs Normal', fontsize=14)
+                    plt.title('Standardized Feature Differences: Anomalies vs Normal', fontsize=14)
                     plt.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
                     plt.tight_layout()
-                    plt.savefig(os.path.join(outdir, 'feature_differences.png'), dpi=300, bbox_inches='tight')
+                    plt.savefig(os.path.join(self.outdir, 'feature_differences.png'), dpi=300, bbox_inches='tight')
+                    plt.close()
+
+                # Plot permutation importance
+                if 'permutation_importance' in feature_data:
+                    perm_imp = feature_data['permutation_importance'].sort_values(ascending=False)
+                    perm_std = feature_data.get('permutation_std', pd.Series(0, index=perm_imp.index))
+
+                    plt.figure(figsize=(12, max(6, len(perm_imp) * 0.3)))
+                    plt.barh(range(len(perm_imp)), perm_imp.values,
+                            xerr=perm_std[perm_imp.index].values,
+                            color='steelblue', alpha=0.7)
+                    plt.yticks(range(len(perm_imp)), perm_imp.index)
+                    plt.xlabel('Permutation Importance', fontsize=12)
+                    plt.ylabel('Features', fontsize=12)
+                    plt.title('Feature Importance (Permutation-based)', fontsize=14)
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(self.outdir, 'permutation_importance.png'), dpi=300, bbox_inches='tight')
                     plt.close()
 
         # Save numerical results as JSON
-        import json
-
-        # Convert DataFrames to serializable format
-        serializable_data = {}
-        for key, value in data.items():
-            if isinstance(value, pd.DataFrame):
-                serializable_data[key] = value.to_dict()
+        def serialize_value(val):
+            """Recursively convert pandas objects to serializable format"""
+            if isinstance(val, (pd.DataFrame, pd.Series)):
+                return val.to_dict()
+            elif isinstance(val, dict):
+                return {k: serialize_value(v) for k, v in val.items()}
+            elif isinstance(val, (np.integer, np.floating)):
+                return float(val)
             else:
-                serializable_data[key] = value
+                return val
 
-        with open(os.path.join(outdir, 'evaluation_results.json'), 'w') as f:
+        serializable_data = {k: serialize_value(v) for k, v in data.items()}
+
+        with open(os.path.join(self.outdir, 'evaluation_results.json'), 'w') as f:
             json.dump(serializable_data, f, indent=2)
 
         
-    def evaluate(self, outdir: str, if_params=None, lof_params=None, ocsvm_params=None):
+    def evaluate(self, if_params=None, lof_params=None, ocsvm_params=None):
         # Compute jaccards
         top_k = [50, 100, 500, 1000, 2000, 3000]
         similarities = []
@@ -213,7 +265,7 @@ class FeatureEvaluation:
         overlaps = self.ensemble_methods(if_params, lof_params, ocsvm_params)
 
         # Compute feature analysis
-        differences = self.feature_analysis()
+        analysis = self.feature_analysis()
 
         data = {
             "jaccard": {
@@ -221,6 +273,6 @@ class FeatureEvaluation:
                 "y": similarities
             },
             "ensembles": overlaps,
-            "feature_analysis": differences
+            "feature_analysis": analysis
         }
-        self.save_report(data, outdir)
+        self.save_report(data)
