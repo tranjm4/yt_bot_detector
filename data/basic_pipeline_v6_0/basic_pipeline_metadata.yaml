@@ -1,0 +1,16 @@
+config_path: config/pipelines/basic_pipeline6.yaml
+description: Basic pipeline like v5, with robust scalers for reply_ratio and channel_diversity
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- temporal_features
+- behavioral_features
+- replies
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-19T02:57:04.455308'
+shapes:
+  all:
+  - 25993
+  - 12
+version: v6.0
