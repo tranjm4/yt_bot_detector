@@ -82,7 +82,6 @@ def fit_model(data: np.ndarray,
         n_components=n_components,
         metric=metric,
         random_state=random_state,
-        verbose=True
     )
 
     print(f"\nFitting UMAP with parameters:")
