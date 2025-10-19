@@ -1,0 +1,68 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.6847381885093148,
+      0.6816520243280328,
+      0.7826432272947197,
+      0.7960051227512406,
+      0.8171048087170241,
+      0.8384081279159079
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.08933174316162043,
+    "if_ocsvm": 0.13041972838841226,
+    "lof_ocsvm": 0.12968876235909668,
+    "all_three": 0.08933174316162043
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "latency_variance_score": 0.0041930284230414505,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.00039683252001789237,
+      "total_duplicates": 0.00047578311156321604,
+      "circular_mean_hour": 0.005964248168113728,
+      "mean_hour_deviance": 0.005763545438654444,
+      "std_hour_deviance": 0.005288931196101071,
+      "unique_channel_count": 0.0031042329946751822,
+      "reply_count": 0.004068462124770739,
+      "toplevel_count": 0.003741791648775139,
+      "reply_ratio": 0.0026231748809729784
+    },
+    "permutation_std": {
+      "latency_variance_score": 2.4487190753627447e-05,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 4.583676567179336e-06,
+      "total_duplicates": 4.935341866084249e-06,
+      "circular_mean_hour": 5.127406102484255e-05,
+      "mean_hour_deviance": 2.5348356113833177e-05,
+      "std_hour_deviance": 3.2686001433512236e-05,
+      "unique_channel_count": 3.779579262987315e-05,
+      "reply_count": 4.52587015871264e-05,
+      "toplevel_count": 2.3909367595087623e-05,
+      "reply_ratio": 3.54891127339592e-05
+    },
+    "standardized_diff": {
+      "latency_variance_score": 0.7986153672623308,
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 0.7632152720921221,
+      "total_duplicates": 0.8352231137615306,
+      "circular_mean_hour": -0.5982658193852464,
+      "mean_hour_deviance": 0.07928683577142001,
+      "std_hour_deviance": 0.5853060301638392,
+      "unique_channel_count": 1.48139565137073,
+      "reply_count": 1.279091326258433,
+      "toplevel_count": 1.0139273857006914,
+      "reply_ratio": 0.8541921230523057,
+      "labels": -2.7332377100597456
+    }
+  }
+}

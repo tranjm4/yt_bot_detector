@@ -1,0 +1,68 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.6870967445118309,
+      0.7026927306030257,
+      0.7819898450605406,
+      0.8054685164463383,
+      0.8584509591060563,
+      0.9128698074553505
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.08836994575462624,
+    "if_ocsvm": 0.11899357519332128,
+    "lof_ocsvm": 0.10860616319778402,
+    "all_three": 0.08836994575462624
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "latency_variance_score": 0.0036212262918369374,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.0003993923071572925,
+      "total_duplicates": 0.000629873610532683,
+      "circular_mean_hour": 0.003770854242211624,
+      "mean_hour_deviance": 0.004588669142228147,
+      "std_hour_deviance": 0.005322035251140838,
+      "unique_channel_count": 0.0023874618091008657,
+      "reply_count": 0.004037572605933476,
+      "toplevel_count": 0.004522276719296397,
+      "reply_ratio": 0.0024279200758497766
+    },
+    "permutation_std": {
+      "latency_variance_score": 1.9754805976612095e-05,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 6.342631839858874e-06,
+      "total_duplicates": 8.316707311131387e-06,
+      "circular_mean_hour": 1.3824575276108492e-05,
+      "mean_hour_deviance": 2.4482359763604917e-05,
+      "std_hour_deviance": 2.229364570382447e-05,
+      "unique_channel_count": 3.100083883416922e-05,
+      "reply_count": 4.055157709944698e-05,
+      "toplevel_count": 2.9397728015912986e-05,
+      "reply_ratio": 2.8761213126257048e-05
+    },
+    "standardized_diff": {
+      "latency_variance_score": 0.7397902189922817,
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 0.843960565305038,
+      "total_duplicates": 0.9235459902267208,
+      "circular_mean_hour": -0.5849763273242099,
+      "mean_hour_deviance": 0.12397691938763969,
+      "std_hour_deviance": 0.413833108534192,
+      "unique_channel_count": 1.6297602205640567,
+      "reply_count": 1.4265884083146305,
+      "toplevel_count": 1.3537152924334526,
+      "reply_ratio": 0.8971078329623594,
+      "labels": -2.9513463381556067
+    }
+  }
+}

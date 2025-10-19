@@ -1,0 +1,65 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.789289838468576,
+      0.7460888255002591,
+      0.8112817320410798,
+      0.858328364262976,
+      0.8924872935099495,
+      0.9091014100081998
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.04559193954659949,
+    "if_ocsvm": 0.08841309823677582,
+    "lof_ocsvm": 0.10881612090680101,
+    "all_three": 0.04559193954659949
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "mean_latency_minutes": 0.0021857431856358023,
+      "valid_comment_count": 0.0018621456748627418,
+      "filtered_comment_count": 0.0,
+      "latency_variance_score": 0.0028051360924100655,
+      "mean_text_length": 0.0022457001308487934,
+      "std_text_length": 0.0023138863254616006,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.0018729847325305194,
+      "total_duplicates": 0.0018152219261098224,
+      "unique_channel_count": 0.0017614061811466741
+    },
+    "permutation_std": {
+      "mean_latency_minutes": 0.00010028932073303238,
+      "valid_comment_count": 0.00011238816406872118,
+      "filtered_comment_count": 0.0,
+      "latency_variance_score": 5.5521046188479676e-05,
+      "mean_text_length": 4.7211563281536044e-05,
+      "std_text_length": 6.323617179841745e-05,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 8.392492926260754e-05,
+      "total_duplicates": 7.245952599294337e-05,
+      "unique_channel_count": 9.169335263603152e-05
+    },
+    "standardized_diff": {
+      "mean_latency_minutes": 0.5641106651679397,
+      "valid_comment_count": 1.569847630395688,
+      "filtered_comment_count": NaN,
+      "latency_variance_score": 0.6947566120348435,
+      "mean_text_length": 0.9581890252341512,
+      "std_text_length": 1.1363743123198327,
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 1.8354956980091404,
+      "total_duplicates": 2.063888945445109,
+      "unique_channel_count": 0.2887571384592129,
+      "labels": -3.4995864775020005
+    }
+  }
+}

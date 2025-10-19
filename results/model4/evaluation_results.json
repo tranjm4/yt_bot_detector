@@ -1,0 +1,65 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.711641827550889,
+      0.7728765775837567,
+      0.8246685400130559,
+      0.8179326731032865,
+      0.8448230456068792,
+      0.9018106798192083
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.10502827684376563,
+    "if_ocsvm": 0.13326664871311508,
+    "lof_ocsvm": 0.12049397914823222,
+    "all_three": 0.10502827684376563
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.00044132581752108767,
+      "total_duplicates": 0.0005670998464168076,
+      "circular_mean_hour": 0.0038294873163710772,
+      "mean_hour_deviance": 0.0040003552088839715,
+      "std_hour_deviance": 0.005384820617871438,
+      "commentCount": 0.003889321599601048,
+      "reply_count": 0.004618493364637438,
+      "toplevel_count": 0.0032981351838745955,
+      "reply_ratio": 0.0031554234856697007
+    },
+    "permutation_std": {
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 5.663161788961214e-06,
+      "total_duplicates": 5.941674272192606e-06,
+      "circular_mean_hour": 2.0227006122714374e-05,
+      "mean_hour_deviance": 3.498317128161471e-05,
+      "std_hour_deviance": 3.363208811307657e-05,
+      "commentCount": 2.343625952550598e-05,
+      "reply_count": 4.600921956198026e-05,
+      "toplevel_count": 2.123589687093308e-05,
+      "reply_ratio": 4.105875720139726e-05
+    },
+    "standardized_diff": {
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 0.6695113980852845,
+      "total_duplicates": 0.7447928835232722,
+      "circular_mean_hour": -0.686033609926485,
+      "mean_hour_deviance": 0.20363045554387535,
+      "std_hour_deviance": 0.47394063459088864,
+      "commentCount": 0.998788693483978,
+      "reply_count": 1.4700596633033185,
+      "toplevel_count": 1.3396509900951419,
+      "reply_ratio": 0.9363190336026849,
+      "labels": -3.005178147968464
+    }
+  }
+}

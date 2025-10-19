@@ -1,0 +1,68 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.7258388852303073,
+      0.716633711193021,
+      0.7894355367947401,
+      0.8212047281103474,
+      0.8498743131957347,
+      0.8898251426159591
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.05667506297229219,
+    "if_ocsvm": 0.10806045340050378,
+    "lof_ocsvm": 0.11687657430730479,
+    "all_three": 0.056171284634760704
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "latency_variance_score": 0.00305491237078932,
+      "mean_text_length": 0.001131263817660272,
+      "std_text_length": 0.0012625028503343793,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.000605605889685401,
+      "total_duplicates": 0.0008018934243385178,
+      "circular_mean_hour": 0.0002236577219659641,
+      "mean_hour_deviance": 0.005910872053466171,
+      "std_hour_deviance": 0.005157032650571991,
+      "commentCount": 0.001174736694547368,
+      "unique_channel_count": 0.0013915972696442625
+    },
+    "permutation_std": {
+      "latency_variance_score": 6.489043301743171e-05,
+      "mean_text_length": 3.947997735046873e-05,
+      "std_text_length": 4.4292663596022976e-05,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 2.9201447663153546e-05,
+      "total_duplicates": 3.249858600280514e-05,
+      "circular_mean_hour": 8.253275411571793e-05,
+      "mean_hour_deviance": 0.00010107143311198457,
+      "std_hour_deviance": 5.768759698837493e-05,
+      "commentCount": 5.2281097393537696e-05,
+      "unique_channel_count": 7.147696041910533e-05
+    },
+    "standardized_diff": {
+      "latency_variance_score": 0.511466727505565,
+      "mean_text_length": 0.9617741230145574,
+      "std_text_length": 1.1405498758161525,
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 1.7971669536698724,
+      "total_duplicates": 1.9992823266470734,
+      "circular_mean_hour": -0.028928607742907446,
+      "mean_hour_deviance": 0.2229452726509515,
+      "std_hour_deviance": 0.17862583845455937,
+      "commentCount": 1.532375523017587,
+      "unique_channel_count": 0.488707181740735,
+      "labels": -3.4311029828870776
+    }
+  }
+}

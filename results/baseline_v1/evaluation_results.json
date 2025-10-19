@@ -1,0 +1,65 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.7716713875589538,
+      0.7287171747571937,
+      0.7993701120982293,
+      0.862756542575549,
+      0.8933060329840524,
+      0.9231775092012441
+    ]
+  },
+  "ensembles": {
+    "if_lof": 0.037531486146095715,
+    "if_ocsvm": 0.06272040302267003,
+    "lof_ocsvm": 0.10654911838790931,
+    "all_three": 0.037531486146095715
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "mean_latency_minutes": 0.0014647064289764033,
+      "valid_comment_count": 0.0015343443059214535,
+      "filtered_comment_count": 0.0,
+      "latency_variance_score": 0.0013469902669762668,
+      "mean_text_length": 0.0024966928191936465,
+      "std_text_length": 0.00239858820006692,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 0.0009325519742425014,
+      "total_duplicates": 0.0011242872891418065,
+      "unique_channel_count": 0.0013255485291913394
+    },
+    "permutation_std": {
+      "mean_latency_minutes": 7.393020318132744e-05,
+      "valid_comment_count": 7.716344436721729e-05,
+      "filtered_comment_count": 0.0,
+      "latency_variance_score": 4.884217341229056e-05,
+      "mean_text_length": 3.077843132069814e-05,
+      "std_text_length": 5.47518813845778e-05,
+      "unique_comment_ratio": 0.0,
+      "max_duplicate_count": 4.8409166804051064e-05,
+      "total_duplicates": 5.4080243556296324e-05,
+      "unique_channel_count": 7.900093162838684e-05
+    },
+    "standardized_diff": {
+      "mean_latency_minutes": 0.7421638099010998,
+      "valid_comment_count": 1.5491690247983372,
+      "filtered_comment_count": NaN,
+      "latency_variance_score": 0.9393471875910737,
+      "mean_text_length": 1.1591788792453819,
+      "std_text_length": 1.3484802378338585,
+      "unique_comment_ratio": NaN,
+      "max_duplicate_count": 2.0463612563833737,
+      "total_duplicates": 2.2608915865607617,
+      "unique_channel_count": 0.14343163302041514,
+      "labels": -3.8797073480750486
+    }
+  }
+}
