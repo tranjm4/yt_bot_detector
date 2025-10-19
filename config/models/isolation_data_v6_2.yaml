@@ -1,0 +1,20 @@
+
+model_type: "isolation_forest"
+
+metadata:
+  name: "model 6.2"
+  version: "v2.0"
+  description: "Isolation forest and UMAP trained on basic_pipeline_v6_0, with alternate UMAP hyperparameters"
+
+config:
+  data: "data/basic_pipeline_v6_0/basic_pipeline_all.csv"
+  outfile_dir: "results/model6_2"
+  random_seed: 42
+  ignore_cols:
+    - "userId"
+
+  umap:
+    n_neighbors: 10
+    min_dist: 0.2
+    metric: "euclidean"
+
