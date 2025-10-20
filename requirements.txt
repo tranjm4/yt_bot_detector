@@ -3,7 +3,7 @@ requests==2.32.5
 pytest==8.4.2
 google-api-core==2.26.0
 google-api-python-client==2.184.0
-typing-extensions
+typing-extensions==4.15.0
 psycopg2-binary==2.9.11
 pydantic==2.12.0
 pandas==2.3.3
@@ -13,3 +13,4 @@ matplotlib-venn==1.1.2
 seaborn==0.13.2
 umap-learn==0.5.9.post2
 sentence-transformers==5.1.1
+emoji==2.15.0
