@@ -107,8 +107,6 @@ class TestBehaviorFeatures:
             features.compute_hour_deviance(df, mean_hour=12),
             result_df
         )
-    
-    def test_
 
 
 class TestNewFeatures:
