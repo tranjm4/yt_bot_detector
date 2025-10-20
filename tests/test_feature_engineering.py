@@ -69,6 +69,25 @@ class TestUserFeatures:
         assert creation_dates["account_creation_date"].apply(
             lambda x: isinstance(x, datetime)
         ).all()
+        
+    def test_get_account_age(self, psql_client):
+        """Tests for correct computation and formatting of account age function"""
+        account_ages = features.get_account_age(psql_client)
+        
+        assert account_ages["account_age"].apply(
+            lambda x: isinstance(x, float)
+        ).all()
+        assert (account_ages["account_age"] >= 0).all()
+        
+    def test_get_comment_velocity(self, psql_client):
+        """Tests for correct computation and formatting of comment velocity function"""
+        
+        comment_velocities = features.get_comment_velocity(psql_client)
+        (comment_velocities["comment_velocity"] >= 0).all()
+        
+        with patch("src.processing.features.get_account_age") as mock_account_age_func:
+            comment_velocities = features.get_comment_velocity(psql_client)
+            mock_account_age_func.assert_called_once_with(psql_client)
     
 
 
@@ -89,6 +108,7 @@ class TestBehaviorFeatures:
             result_df
         )
     
+    def test_
 
 
 class TestNewFeatures:
@@ -174,6 +194,35 @@ class TestNewFeatures:
         non_null_avg = repetition_stats[repetition_stats["avgDuplicateCount"].notna()]
         if len(non_null_avg) > 0:
             assert (non_null_avg["maxDuplicateCount"] >= non_null_avg["avgDuplicateCount"]).all()
+            
+    def test_get_caps_percentage(self, psql_client):
+        """Tests caps percentage retrieval"""
+        caps_percentages = features.get_caps_percentage(psql_client, min_comments=2)
+        
+        assert set(caps_percentages.columns) == {
+            "userId", "caps_ratio"
+        }
+        
+        if len(caps_percentages) == 0:
+            pytest.skip("No data in test database")
+        
+        assert (caps_percentages["caps_ratio"] > 0).all()
+        assert (caps_percentages["caps_ratio"] <= 1).all()
+        
+    def test_get_emoji_percentage(self, psql_client):
+        """Tests emoji percentage retrieval"""
+        emoji_percentages = features.get_emoji_percentage(psql_client, min_comments=2)
+        
+        assert set(emoji_percentages.columns) == {
+            "userId", "emoji_percentage"
+        }
+        
+        if len(emoji_percentages) == 0:
+            pytest.skip("No data in test database")
+            
+        assert (emoji_percentages["emoji_percentage"] > 0).all()
+        assert (emoji_percentages["emoji_percentage"] <= 1).all()
+        
 
 
 class TestGraphFeatures:

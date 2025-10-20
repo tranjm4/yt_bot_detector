@@ -7,6 +7,9 @@ This file contains modules used for feature engineering
 import pandas as pd
 import numpy as np
 
+import emoji
+from datetime import datetime
+
 from typing import Optional, List
 
 
@@ -645,3 +648,101 @@ def get_temporal_co_commenting_clusters(psql_client, time_window_minutes: int = 
     }).reset_index()
 
     return user_features
+
+def get_caps_percentage(psql_client, min_comments) -> pd.DataFrame:
+    """
+    Retrieves the percentage of total words in a user's vocabulary that
+    are all caps.
+    
+    Args:
+        psql_client: The client connection to the Postgres server
+    """
+    query = """
+    SELECT c.commenterId, c.commentText
+    FROM Yt.Comments AS c
+    WHERE c.commenterId IN (
+        SELECT commenterId
+        FROM Yt.Comments
+        GROUP BY commenterId
+        HAVING COUNT(commenterId) > %s
+    );
+    """
+    df = pd.DataFrame(psql_client.query(query, (min_comments,)), columns=["userId", "text"])
+    def caps_percentage(texts: pd.Series) -> float:
+        """Given a user's history of texts, retrieves the percentage of words that are all caps"""
+        words = ' '.join(texts).split()
+        if not words:
+            return 0.0
+        caps_words = sum(1 for word in words if word not in ('A', 'I') and word.isupper() and word.isalpha())
+        return caps_words / len(words)
+
+    # Aggregate caps percentage by user
+    result = df.groupby("userId")["text"].apply(caps_percentage).reset_index()
+    result.columns = ["userId", "caps_ratio"]
+    
+    return result
+    
+
+def get_emoji_percentage(psql_client, min_comments) -> pd.DataFrame:
+    """
+    Retrieves the percentage of total characters in a user's vocabulary that
+    are emojis.
+    
+    Args:
+        psql_client: The client connection to the Postgres server
+    """
+    query = """
+    SELECT c.commenterId, c.commentText
+    FROM Yt.Comments AS c
+    WHERE c.commenterId IN (
+        SELECT commenterId
+        FROM Yt.Comments
+        GROUP BY commenterId
+        HAVING COUNT(commenterId) > %s
+    );
+    """
+    df = pd.DataFrame(psql_client.query(query, (min_comments,)), columns=["userId", "text"])
+    
+    # Aggregate emoji percentage by user
+    def emoji_percentage(texts: pd.Series) -> float:
+        """Retrieves emoji percentage across total length of text"""
+        all_text = ' '.join(texts)
+        emoji_count = emoji.emoji_count(all_text)
+        emoji_percentage = emoji_count / len(all_text)
+        
+        return emoji_percentage
+    
+    result = df.groupby("userId")["text"].apply(emoji_percentage).reset_index()
+    result.columns = ["userId", "emoji_percentage"]
+    
+    return result
+
+def get_account_age(psql_client) -> pd.DataFrame:
+    """
+    Retrieves the account age (in days) of users based on account creation date
+    """
+    query = """
+    SELECT u.userId, u.createDate
+    FROM Yt.Users AS u;
+    """
+    df = pd.DataFrame(psql_client.query(query), columns=["userId", "create_date"])
+    df["create_date"] = pd.to_datetime(df["create_date"])
+    df["account_age"] = (pd.Timestamp.now() - df["create_date"]).dt.total_seconds() / 60 / 60 / 24
+    df = df.drop(labels=["create_date"], axis=1)
+
+    return df
+    
+    
+def get_comment_velocity(psql_client) -> pd.DataFrame:
+    """
+    Retrieves the amount of comments per day since user creation date
+    """
+    account_age = get_account_age(psql_client)
+    comment_count = get_comment_count(psql_client, None)
+
+    df = account_age.merge(comment_count, on="userId", how="inner")
+
+    df["comment_velocity"] = df["comment_count"] / df["account_age"]
+
+    return df[["userId", "comment_velocity"]]
+    
