@@ -21,23 +21,6 @@ This project primarily focuses on **unsupervised learning models** for **anomaly
 
 ## Example outputs
 
-### Oct 16, 2025
-Here are some outputs from UMAP based on various configurations of the data:
-
-#### (a) First UMAP run [(basic_pipeline.yaml)](https://github.com/tranjm4/yt_bot_detector/blob/main/config/pipelines/basic_pipeline.yaml)
-
-This was on the first configuration of my data. The data contained very high outliers; for example, the `comment_latency_variance` metric (see below) had maximum values of 176 even after normalization. Although there appears to be some cluster, it is hard to reliably interpret this model due to the poor quality of the data.
-
-![UMAP visualization onto 2-dimensional plot. Points are rather scattered, but reveal one large, sparsely connected mass and one smaller, sparsely connected mass](https://github.com/tranjm4/yt_bot_detector/blob/main/results/umap/umap_visualization.png?raw=true)
-
-#### (b) 7th UMAP run [(basic_pipeline5.yaml)](https://github.com/tranjm4/yt_bot_detector/blob/main/config/pipelines/basic_pipeline5.yaml)
-![UMAP visualization onto 2-dimensional plot. Two prominent, tight-knit clusters, surrounded by additional smaller clusters](https://github.com/tranjm4/yt_bot_detector/blob/main/results/umap7/umap_visualization.png?raw=true)
-
-We see much more defined clusters. Accounting for the heavy-tailedness of the data (the extreme outliers), I implemented optional log transforms into my pipeline, applying them on those skewed features. Values are much more bounded within reasonable values (e.g., -2 to 4).
-
-
-I plan on manually reviewing the properties of these clusters soon.
-
 ### Oct 18, 2025
 I fitted an isolation forest on [data/basic_pipeline_v5_0](https://github.com/tranjm4/yt_bot_detector/blob/main/config/pipelines/basic_pipeline.yaml), using its labels to help visualize UMAP. I fitted both models independently to see if they are in agreement with each other. Below is the result:
 
