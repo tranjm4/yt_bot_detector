@@ -61,7 +61,9 @@ def fit_model(data: np.ndarray,
               min_dist: float = 0.1,
               n_components: int = 2,
               metric: str = "euclidean",
-              random_state: int = 42) -> umap.UMAP:
+              random_state: int = 42,
+              low_memory: bool = False,
+              n_jobs: int = -1) -> umap.UMAP:
     """
     Fit UMAP model to data.
 
@@ -82,6 +84,9 @@ def fit_model(data: np.ndarray,
         n_components=n_components,
         metric=metric,
         random_state=random_state,
+        verbose=True,
+        low_memory=low_memory,
+        n_jobs=n_jobs
     )
 
     print(f"\nFitting UMAP with parameters:")
@@ -152,7 +157,13 @@ def main():
     parser.add_argument("--output_dir", default="results/umap",
                         help="Directory to save results")
     parser.add_argument("--random_state", type=int, default=42,
-                        help="Random seed for reproducibility")
+                        help="Random seed for reproducibility (use None for parallelism)")
+    parser.add_argument("--low_memory", action="store_true",
+                        help="Use low memory mode (slower but uses less RAM)")
+    parser.add_argument("--n_jobs", type=int, default=1,
+                        help="Number of parallel jobs (set >1 for speed, but disables random_state)")
+    parser.add_argument("--subsample", type=int, default=None,
+                        help="Randomly subsample data to this many points for faster fitting")
 
     args = parser.parse_args()
 
@@ -164,14 +175,36 @@ def main():
     df = load_data(args.data_path)
     features, metadata = prepare_features(df, exclude_cols=args.exclude_cols)
 
+    # Subsample if requested
+    if args.subsample and args.subsample < len(features):
+        print(f"\nSubsampling {args.subsample} points from {len(features)} for faster fitting...")
+        indices = np.random.RandomState(args.random_state).choice(
+            len(features), size=args.subsample, replace=False
+        )
+        features_subsample = features[indices]
+        print(f"Subsampled feature matrix shape: {features_subsample.shape}")
+    else:
+        features_subsample = features
+
+    # Handle parallelism vs reproducibility tradeoff
+    if args.n_jobs > 1:
+        print(f"WARNING: Using n_jobs={args.n_jobs} disables random_state for parallelism")
+        random_state = None
+        n_jobs = args.n_jobs
+    else:
+        random_state = args.random_state
+        n_jobs = 1
+
     # Fit UMAP model
     reducer = fit_model(
-        features,
+        features_subsample,
         n_neighbors=args.n_neighbors,
         min_dist=args.min_dist,
         n_components=args.n_components,
         metric=args.metric,
-        random_state=args.random_state
+        random_state=random_state,
+        low_memory=args.low_memory,
+        n_jobs=n_jobs
     )
 
     # Transform data

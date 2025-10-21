@@ -40,6 +40,9 @@ class UmapConfig(TypedDict):
     n_neighbors: int
     min_dist: float
     metric: Literal["euclidean", "manhattan", "chebyshev", "minkowsky"]
+    n_jobs: Optional[int]
+    low_memory: Optional[bool]
+    subsample_fit: Optional[int]
     
 class ModelConfig(TypedDict):
     data: str
@@ -73,13 +76,13 @@ def read_config(path: str) -> Config:
         assert config.get("config", "")
         assert config["config"].get("data", "")
         assert config["config"].get("outfile_dir", "")
-        assert config["config"].get("random_seed", "")
         assert config["config"].get("umap", "")
         assert config["config"]["umap"].get("n_neighbors", "")
         assert config["config"]["umap"].get("min_dist", "")
         assert config["config"]["umap"].get("metric", "")
         # Type checking config
-        assert isinstance(config["config"]["random_seed"], int)
+        if config["config"].get("random_seed") is not None:
+            assert isinstance(config["config"]["random_seed"], int)
         assert isinstance(config["config"]["umap"]["n_neighbors"], int)
         assert isinstance(config["config"]["umap"]["min_dist"], float)
     except:
@@ -174,8 +177,10 @@ def train_isolation_forest(config: ModelConfig) -> tuple[iso_forest.IsolationFor
         X = df.drop(labels=config.get("ignore_cols"), axis=1)
     else:
         X = df
-
-    model = iso_forest.train_isolation_forest(X, random_state=config["random_seed"])
+    if config.get("random_seed"):
+        model = iso_forest.train_isolation_forest(X, random_state=config["random_seed"])
+    else:
+        model = iso_forest.train_isolation_forest(X)
 
     # Run labeling for isolation forest
     labels = model.predict(X)
@@ -203,18 +208,46 @@ def fit_umap(df: pd.DataFrame, X: np.ndarray, config: ModelConfig):
     # Extract UMAP configuration
     umap_config = config["umap"]
 
+    # Get optional performance parameters
+    n_jobs = umap_config.get("n_jobs", 1)
+    low_memory = umap_config.get("low_memory", False)
+    subsample_fit = umap_config.get("subsample_fit", None)
+
+    # Handle parallelism vs reproducibility tradeoff
+    # UMAP cannot use both random_state and n_jobs > 1
+    if n_jobs and n_jobs != 1:
+        logger.warning(f"Using n_jobs={n_jobs} for parallelism - disabling random_state for speed")
+        random_state = None
+    else:
+        random_state = config.get("random_seed", 42)
+        n_jobs = 1  # Force to 1 if using random_state
+
+    # Prepare data
+    X_array = X.values if isinstance(X, pd.DataFrame) else X
+
+    # Subsample for fitting if requested (much faster for large datasets)
+    if subsample_fit and subsample_fit < len(X_array):
+        logger.info(f"Subsampling {subsample_fit} points from {len(X_array)} for UMAP fitting...")
+        indices = np.random.RandomState(42).choice(len(X_array), size=subsample_fit, replace=False)
+        X_fit = X_array[indices]
+    else:
+        X_fit = X_array
+
     # Fit UMAP model
     reducer = um.fit_model(
-        data=X.values if isinstance(X, pd.DataFrame) else X,
+        data=X_fit,
         n_neighbors=umap_config["n_neighbors"],
         min_dist=umap_config["min_dist"],
         n_components=2,
         metric=umap_config["metric"],
-        random_state=config["random_seed"]
+        random_state=random_state,
+        low_memory=low_memory,
+        n_jobs=n_jobs or 1
     )
 
-    # Transform data
-    embedding = reducer.transform(X.values if isinstance(X, pd.DataFrame) else X)
+    # Transform ALL data (even if we only fit on subset)
+    logger.info(f"Transforming all {len(X_array)} samples...")
+    embedding = reducer.transform(X_array)
 
     # Create output directory
     outfile_dir = Path(config["outfile_dir"])
