@@ -387,7 +387,7 @@ def get_text_repetition_stats(psql_client, min_comments: Optional[int] = 2) -> p
     user_stats AS (
         SELECT
             commenterId,
-            COUNT(*) AS totalComments,
+            SUM(duplicate_count) AS totalComments,
             COUNT(DISTINCT commentText) AS uniqueComments,
             MAX(duplicate_count) AS maxDuplicates,
             AVG(CASE WHEN duplicate_count > 1 THEN duplicate_count ELSE NULL END) AS avgDuplicates,
@@ -413,12 +413,7 @@ def get_text_repetition_stats(psql_client, min_comments: Optional[int] = 2) -> p
     return pd.DataFrame(result,
                        columns=["userId", "unique_comment_ratio", "max_duplicate_count",
                                "avg_duplicate_count", "total_duplicates", "comment_count"])
-
-# ============================================================================
-# Graph-based features
-# ============================================================================
-# Note: These features require networkx and can be computationally expensive.
-# Consider running them separately or on a subset of data.
+    
 
 def build_user_video_graph(psql_client, sample_size: Optional[int] = None):
     """
@@ -719,11 +714,15 @@ def get_emoji_percentage(psql_client, min_comments) -> pd.DataFrame:
 
 def get_account_age(psql_client) -> pd.DataFrame:
     """
-    Retrieves the account age (in days) of users based on account creation date
+    Retrieves the account age (in days) of users based on account creation date.
+    Only includes users who have actually commented.
     """
     query = """
-    SELECT u.userId, u.createDate
-    FROM Yt.Users AS u;
+    SELECT DISTINCT u.userId, u.createDate
+    FROM Yt.Users AS u
+    INNER JOIN Yt.Comments AS c
+        ON u.userId = c.commenterId
+    WHERE u.createDate IS NOT NULL;
     """
     df = pd.DataFrame(psql_client.query(query), columns=["userId", "create_date"])
     df["create_date"] = pd.to_datetime(df["create_date"])
