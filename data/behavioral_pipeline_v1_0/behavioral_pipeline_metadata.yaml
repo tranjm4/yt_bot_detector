@@ -1,0 +1,20 @@
+config_path: config/pipelines/behavioral_pipeline1.yaml
+description: Pipeline with new features (emoji percentage, caps percentage, comment
+  velocity, acount age)
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- text_statistics
+- temporal_features
+- behavioral_features
+- behavioral_features_2
+- account_features
+- replies
+pipeline_name: behavioral_pipeline
+run_timestamp: '2025-10-20T05:17:00.767016'
+shapes:
+  all:
+  - 103618
+  - 16
+version: v1.0

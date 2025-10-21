@@ -1,0 +1,19 @@
+config_path: config/pipelines/behavioral_pipeline2.yaml
+description: Pipeline with focus on robust scaling instead of standard scaling
+feature_groups:
+- counting_features
+- latency_variance_score
+- text_features
+- text_statistics
+- temporal_features
+- behavioral_features
+- behavioral_features_2
+- account_features
+- replies
+pipeline_name: behavioral_pipeline2
+run_timestamp: '2025-10-20T23:55:35.409286'
+shapes:
+  all:
+  - 103618
+  - 16
+version: v2.0
