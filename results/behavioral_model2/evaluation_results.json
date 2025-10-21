@@ -1,0 +1,74 @@
+{
+  "jaccard": {
+    "x": [
+      50,
+      100,
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "y": [
+      0.4621524051418551,
+      0.5721458646947084,
+      0.6778882264778311,
+      0.7120064557082056,
+      0.7795639601435618,
+      0.833040183823407
+    ]
+  },
+  "feature_analysis": {
+    "permutation_importance": {
+      "latency_variance_score": 0.0009560962202592171,
+      "unique_comment_ratio": 0.00012564195237640407,
+      "max_duplicate_count": 6.911745411606884e-05,
+      "total_duplicates": 0.00012397923033346525,
+      "emoji_percentage": 0.0006788868663974267,
+      "caps_ratio": 0.0007372960361538061,
+      "circular_mean_hour": 0.0015007705266740444,
+      "mean_hour_deviance": 0.0010541419722158718,
+      "std_hour_deviance": 0.0011437693388578862,
+      "unique_channel_count": 0.0008492580629387514,
+      "comment_velocity": 0.004439514604796357,
+      "account_age": 0.0035181775160157635,
+      "reply_count": 0.002321202374358955,
+      "toplevel_count": 0.0019085754499696295,
+      "reply_ratio": 0.0018398928514221035
+    },
+    "permutation_std": {
+      "latency_variance_score": 3.418090401512856e-06,
+      "unique_comment_ratio": 1.0835791930366277e-06,
+      "max_duplicate_count": 3.556634468765687e-07,
+      "total_duplicates": 1.0862540869784895e-06,
+      "emoji_percentage": 4.002214944434264e-06,
+      "caps_ratio": 2.3874010445363474e-06,
+      "circular_mean_hour": 3.44878884885909e-06,
+      "mean_hour_deviance": 2.525377029917808e-06,
+      "std_hour_deviance": 3.3044662563745515e-06,
+      "unique_channel_count": 4.800660056830608e-06,
+      "comment_velocity": 1.194305101234967e-05,
+      "account_age": 1.4232474424677737e-05,
+      "reply_count": 9.20624548061567e-06,
+      "toplevel_count": 7.135002496784779e-06,
+      "reply_ratio": 7.898919995119189e-06
+    },
+    "standardized_diff": {
+      "account_age": -0.6148936959831849,
+      "caps_ratio": 0.9655172953653713,
+      "circular_mean_hour": -0.7846193826211255,
+      "comment_velocity": 0.8673651138968804,
+      "emoji_percentage": 0.7099758360612813,
+      "labels": NaN,
+      "latency_variance_score": 1.052351042926692,
+      "max_duplicate_count": 0.9069789442921221,
+      "mean_hour_deviance": 0.1632313975201029,
+      "reply_count": 1.9110141959067146,
+      "reply_ratio": 1.3485504894199927,
+      "std_hour_deviance": 0.8539867218578104,
+      "toplevel_count": 1.902145187456847,
+      "total_duplicates": 1.0291617284851948,
+      "unique_channel_count": 2.174114628545055,
+      "unique_comment_ratio": -1.134250640529723
+    }
+  }
+}
