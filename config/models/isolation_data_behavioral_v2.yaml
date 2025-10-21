@@ -1,0 +1,22 @@
+
+model_type: "isolation_forest"
+
+metadata:
+  name: "behavioral model 2"
+  version: "v2.0"
+  description: "Isolation forest and UMAP trained on behavioral_pipeline_v2_0"
+
+config:
+  data: "data/behavioral_pipeline_v2_0/behavioral_pipeline2_all.csv"
+  outfile_dir: "results/behavioral_model2"
+  ignore_cols:
+    - "userId"
+
+  umap:
+    n_neighbors: 15  # Reduced from 50 for faster computation
+    min_dist: 0.3
+    metric: "euclidean"
+    n_jobs: -1  # Use all CPU cores for parallelism
+    low_memory: false  # Set to true if running out of RAM
+    subsample_fit: 20000  # Fit on 20k users, transform all (much faster)
+
