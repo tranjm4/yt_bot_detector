@@ -20,6 +20,10 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 class FeatureEvaluation:
     def __init__(self, data_path: str, outdir: str, df=None):
         if df is not None:
@@ -87,8 +91,11 @@ class FeatureEvaluation:
         lof_model = LocalOutlierFactor(contamination=0.13, **lof_params)
         ocsvm_model = OneClassSVM(**ocsvm_params)
         
+        logger.info("Fitting Isolation Forest")
         if_predictions = if_model.fit_predict(self.X) == -1
+        logger.info("Fitting LOF")
         lof_predictions = lof_model.fit_predict(self.X) == -1
+        logger.info("Fitting One-Class SVM")
         ocsvm_predictions = ocsvm_model.fit_predict(self.X) == -1
         
         # Find overlaps between models' anomalies
@@ -117,8 +124,8 @@ class FeatureEvaluation:
         copy_df["labels"] = fit_if_model.predict(self.X)
 
         # Compute standardized differences
-        anomalies = copy_df[copy_df["labels"] == -1]
-        normals = copy_df[copy_df["labels"] != -1]
+        anomalies = copy_df[copy_df["labels"] == -1].drop(labels=["labels"], axis=1)
+        normals = copy_df[copy_df["labels"] != -1].drop(labels=["labels"], axis=1)
 
         anomaly_means = anomalies.describe().loc["mean"]
         normal_means = normals.describe().loc["mean"]
@@ -166,33 +173,33 @@ class FeatureEvaluation:
         plt.close()
 
         # 2. Venn diagram for ensemble overlaps
-        if 'ensembles' in data and data['ensembles']:
-            ensembles = data['ensembles']
+        # if 'ensembles' in data and data['ensembles']:
+        #     ensembles = data['ensembles']
 
-            # Extract overlap values
-            # For venn3, we need approximate overlap regions
-            # Based on pairwise and three-way overlaps
-            plt.figure(figsize=(10, 8))
+        #     # Extract overlap values
+        #     # For venn3, we need approximate overlap regions
+        #     # Based on pairwise and three-way overlaps
+        #     plt.figure(figsize=(10, 8))
 
-            # Calculate exclusive regions from overlaps
-            if_lof_only = ensembles.get('if_lof', 0) - ensembles.get('all_three', 0)
-            if_ocsvm_only = ensembles.get('if_ocsvm', 0) - ensembles.get('all_three', 0)
-            lof_ocsvm_only = ensembles.get('lof_ocsvm', 0) - ensembles.get('all_three', 0)
-            all_three = ensembles.get('all_three', 0)
+        #     # Calculate exclusive regions from overlaps
+        #     if_lof_only = ensembles.get('if_lof', 0) - ensembles.get('all_three', 0)
+        #     if_ocsvm_only = ensembles.get('if_ocsvm', 0) - ensembles.get('all_three', 0)
+        #     lof_ocsvm_only = ensembles.get('lof_ocsvm', 0) - ensembles.get('all_three', 0)
+        #     all_three = ensembles.get('all_three', 0)
 
-            venn = venn3(
-                subsets={
-                    '110': max(0, if_lof_only),      # IF & LOF only
-                    '101': max(0, if_ocsvm_only),    # IF & OCSVM only
-                    '011': max(0, lof_ocsvm_only),   # LOF & OCSVM only
-                    '111': max(0, all_three)         # All three
-                },
-                set_labels=('Isolation Forest', 'LOF', 'One-Class SVM')
-            )
+        #     venn = venn3(
+        #         subsets={
+        #             '110': max(0, if_lof_only),      # IF & LOF only
+        #             '101': max(0, if_ocsvm_only),    # IF & OCSVM only
+        #             '011': max(0, lof_ocsvm_only),   # LOF & OCSVM only
+        #             '111': max(0, all_three)         # All three
+        #         },
+        #         set_labels=('Isolation Forest', 'LOF', 'One-Class SVM')
+        #     )
 
-            plt.title('Ensemble Model Agreement on Anomalies', fontsize=14)
-            plt.savefig(os.path.join(self.outdir, 'ensemble_venn.png'), dpi=300, bbox_inches='tight')
-            plt.close()
+        #     plt.title('Ensemble Model Agreement on Anomalies', fontsize=14)
+        #     plt.savefig(os.path.join(self.outdir, 'ensemble_venn.png'), dpi=300, bbox_inches='tight')
+        #     plt.close()
 
         # 3. Bar plots for feature analysis
         if 'feature_analysis' in data and data['feature_analysis'] is not None:
@@ -254,25 +261,29 @@ class FeatureEvaluation:
     def evaluate(self, if_params=None, lof_params=None, ocsvm_params=None):
         # Compute jaccards
         top_k = [50, 100, 500, 1000, 2000, 3000]
+        logger.info(f"Computing Jaccard Similarities with top_k={top_k}")
         similarities = []
         for k in top_k:
             similarities.append(self.jaccard_similarity(top_k=k))
 
         # Compute ensemble agreements
-        if_params = if_params or {}
-        lof_params = lof_params or {}
-        ocsvm_params = ocsvm_params or {}
-        overlaps = self.ensemble_methods(if_params, lof_params, ocsvm_params)
-
+        # logger.info("Running ensemble methods")
+        # if_params = if_params or {}
+        # lof_params = lof_params or {}
+        # ocsvm_params = ocsvm_params or {}
+        # overlaps = self.ensemble_methods(if_params, lof_params, ocsvm_params)
+        
         # Compute feature analysis
+        logger.info("Running feature analysis")
         analysis = self.feature_analysis()
-
+        
+        logger.info("Saving results...")
         data = {
             "jaccard": {
                 "x": top_k,
                 "y": similarities
             },
-            "ensembles": overlaps,
+            # "ensembles": overlaps,
             "feature_analysis": analysis
         }
         self.save_report(data)
