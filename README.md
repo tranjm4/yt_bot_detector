@@ -21,10 +21,24 @@ This project primarily focuses on **unsupervised learning models** for **anomaly
 
 ## Example outputs
 
+### Oct 20, 2025
+
+![UMAP visualization with colored labels; very stringy clusters, almost entirely labeled as 'normal', with a single cluster on the outer side labeled as 'anomaly'.](https://github.com/tranjm4/yt_bot_detector/blob/main/results/behavioral_model2/umap_if_visualization.png?raw=true)
+
+This is the result of including additional features such as:
+- `comment velocity`: the average rate of comments per day since account creation
+- `account age`: the age of the account in days
+- `emoji ratio`: the percentage of text consisting of emojis
+- `caps ratio`: the percentage of words consisting of all capital letters
+
+Using robust scalers (utilized above) to normalize the data also appeared to have more distinct separation. The UMAP below did not use as many robust scalers, which resulted in slightly more anomalies dispersed throughout the UMAP visualization, as seen in the left graph below:
+
+![UMAP visualization with colored labels; very stringy clusters, almost entirely labeled as 'normal', with a single cluster on the outer side labeled as 'anomaly'.](https://github.com/tranjm4/yt_bot_detector/blob/main/results/behavioral_model1/umap_if_visualization.png?raw=true)
+
 ### Oct 18, 2025
 I fitted an isolation forest on [data/basic_pipeline_v5_0](https://github.com/tranjm4/yt_bot_detector/blob/main/config/pipelines/basic_pipeline.yaml), using its labels to help visualize UMAP. I fitted both models independently to see if they are in agreement with each other. Below is the result:
 
-![UMAP visualization with colored labels; many circular clusters, with one oblong-shaped cluster. The oblong cluster is labeled as an 'anomaly' based on isolation forest predictions. The anomalies appear to be strongly isolated from the normal points, with a few normal points included in the anomaly cluster](https://github.com/tranjm4/yt_bot_detector/blob/main/results/model5/umap_if_visualization.png?raw=true)
+![UMAP visualization with colored labels; many circular clusters, with one oblong-shaped cluster. The oblong cluster is labeled as an 'anomaly' based on isolation forest predictions. The anomalies appear to be strongly isolated from the normal points, with a few normal points included in the anomaly cluster.](https://github.com/tranjm4/yt_bot_detector/blob/main/results/model5/umap_if_visualization.png?raw=true)
 
 The anomalies detected by the isolation forest (in red) are very clearly isolated in their own cluster by the UMAP model.
 
