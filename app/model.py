@@ -42,7 +42,7 @@ def display_model_page():
         db = get_db_connection()
 
         # Get predictions and model info
-        predictions_df = get_latest_predictions(db, limit=100)
+        predictions_df = get_latest_predictions(db, limit=500)
 
         if predictions_df.empty:
             st.warning("No predictions found. Run the pipeline first.")
@@ -191,7 +191,7 @@ def display_predictions_table(predictions_df: pd.DataFrame):
     # Filter controls
     col1, col2 = st.columns(2)
     with col1:
-        limit = st.slider("Number of users to display", 10, 100, 50, key="table_limit")
+        limit = st.slider("Number of users to display", 10, 500, 50, key="table_limit")
     with col2:
         sort_by = st.selectbox(
             "Sort by", ["Anomaly Score (Low to High)", "Account Age", "Comment Velocity"]
