@@ -9,60 +9,54 @@
       3000
     ],
     "y": [
-      0.6847381885093148,
-      0.6816520243280328,
-      0.7826432272947197,
-      0.7960051227512406,
-      0.8171048087170241,
-      0.8384081279159079
+      0.5876044454515003,
+      0.6373676292946721,
+      0.7613988361798031,
+      0.8064923430553945,
+      0.8487348161099973,
+      0.8641497720895488
     ]
-  },
-  "ensembles": {
-    "if_lof": 0.08933174316162043,
-    "if_ocsvm": 0.13041972838841226,
-    "lof_ocsvm": 0.12968876235909668,
-    "all_three": 0.08933174316162043
   },
   "feature_analysis": {
     "permutation_importance": {
-      "latency_variance_score": 0.0041930284230414505,
-      "unique_comment_ratio": 0.0,
-      "max_duplicate_count": 0.00039683252001789237,
-      "total_duplicates": 0.00047578311156321604,
-      "circular_mean_hour": 0.005964248168113728,
-      "mean_hour_deviance": 0.005763545438654444,
-      "std_hour_deviance": 0.005288931196101071,
-      "unique_channel_count": 0.0031042329946751822,
-      "reply_count": 0.004068462124770739,
-      "toplevel_count": 0.003741791648775139,
-      "reply_ratio": 0.0026231748809729784
+      "latency_variance_score": 0.002619591459656545,
+      "unique_comment_ratio": 0.0005234059774792355,
+      "max_duplicate_count": 0.0007167437087430894,
+      "total_duplicates": 0.0007704468831428224,
+      "circular_mean_hour": 0.004815876093051924,
+      "mean_hour_deviance": 0.0038976947097024263,
+      "std_hour_deviance": 0.005272884989280658,
+      "unique_channel_count": 0.0038088781762939893,
+      "reply_count": 0.002994919104507937,
+      "toplevel_count": 0.003934847451063756,
+      "reply_ratio": 0.0022431793098266818
     },
     "permutation_std": {
-      "latency_variance_score": 2.4487190753627447e-05,
-      "unique_comment_ratio": 0.0,
-      "max_duplicate_count": 4.583676567179336e-06,
-      "total_duplicates": 4.935341866084249e-06,
-      "circular_mean_hour": 5.127406102484255e-05,
-      "mean_hour_deviance": 2.5348356113833177e-05,
-      "std_hour_deviance": 3.2686001433512236e-05,
-      "unique_channel_count": 3.779579262987315e-05,
-      "reply_count": 4.52587015871264e-05,
-      "toplevel_count": 2.3909367595087623e-05,
-      "reply_ratio": 3.54891127339592e-05
+      "latency_variance_score": 1.0679623928970639e-05,
+      "unique_comment_ratio": 7.959317378309588e-06,
+      "max_duplicate_count": 7.95286774551929e-06,
+      "total_duplicates": 7.2322995173258e-06,
+      "circular_mean_hour": 3.0274417168972274e-05,
+      "mean_hour_deviance": 1.3023905996917985e-05,
+      "std_hour_deviance": 2.5768590000049506e-05,
+      "unique_channel_count": 2.2949264695364182e-05,
+      "reply_count": 2.0982240873602683e-05,
+      "toplevel_count": 1.2362016572106688e-05,
+      "reply_ratio": 1.1684280913736922e-05
     },
     "standardized_diff": {
-      "latency_variance_score": 0.7986153672623308,
-      "unique_comment_ratio": NaN,
-      "max_duplicate_count": 0.7632152720921221,
-      "total_duplicates": 0.8352231137615306,
-      "circular_mean_hour": -0.5982658193852464,
-      "mean_hour_deviance": 0.07928683577142001,
-      "std_hour_deviance": 0.5853060301638392,
-      "unique_channel_count": 1.48139565137073,
-      "reply_count": 1.279091326258433,
-      "toplevel_count": 1.0139273857006914,
-      "reply_ratio": 0.8541921230523057,
-      "labels": -2.7332377100597456
+      "circular_mean_hour": -0.6031058472418322,
+      "labels": NaN,
+      "latency_variance_score": 0.8081810294520386,
+      "max_duplicate_count": 1.0589710287969365,
+      "mean_hour_deviance": -0.14267278257793062,
+      "reply_count": 1.3268887520344856,
+      "reply_ratio": 0.9021486455739971,
+      "std_hour_deviance": 0.23971005032718787,
+      "toplevel_count": 1.0248673286699614,
+      "total_duplicates": 1.159347432945301,
+      "unique_channel_count": 1.4835500694715065,
+      "unique_comment_ratio": -0.9321132181369494
     }
   }
 }

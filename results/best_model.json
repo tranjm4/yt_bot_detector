@@ -1,0 +1,13 @@
+{
+  "model_name": "model2",
+  "model_directory": "results/model2",
+  "composite_score": 0.9528397644418563,
+  "metrics": {
+    "jaccard_stability": 0.9091014100081998,
+    "feature_diversity": 0.9942968647925212,
+    "anomaly_rate": 0.0853904282115869,
+    "anomaly_score": 1.0,
+    "composite_score": 0.9528397644418563
+  },
+  "timestamp": 1760911376.3435125
+}

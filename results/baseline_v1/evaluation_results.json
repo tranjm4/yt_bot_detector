@@ -9,57 +9,51 @@
       3000
     ],
     "y": [
-      0.7716713875589538,
-      0.7287171747571937,
-      0.7993701120982293,
-      0.862756542575549,
-      0.8933060329840524,
-      0.9231775092012441
+      0.7392308476677505,
+      0.8103888664546639,
+      0.8352080837253781,
+      0.8366503630067579,
+      0.8597039125588423,
+      0.9125414638666534
     ]
-  },
-  "ensembles": {
-    "if_lof": 0.037531486146095715,
-    "if_ocsvm": 0.06272040302267003,
-    "lof_ocsvm": 0.10654911838790931,
-    "all_three": 0.037531486146095715
   },
   "feature_analysis": {
     "permutation_importance": {
-      "mean_latency_minutes": 0.0014647064289764033,
-      "valid_comment_count": 0.0015343443059214535,
+      "mean_latency_minutes": 0.001180909018978432,
+      "valid_comment_count": 0.0010518956077645136,
       "filtered_comment_count": 0.0,
-      "latency_variance_score": 0.0013469902669762668,
-      "mean_text_length": 0.0024966928191936465,
-      "std_text_length": 0.00239858820006692,
-      "unique_comment_ratio": 0.0,
-      "max_duplicate_count": 0.0009325519742425014,
-      "total_duplicates": 0.0011242872891418065,
-      "unique_channel_count": 0.0013255485291913394
+      "latency_variance_score": 0.0011524240396102391,
+      "mean_text_length": 0.0016326894928451684,
+      "std_text_length": 0.001529327998154467,
+      "unique_comment_ratio": 0.002971736412493764,
+      "max_duplicate_count": 0.0026944531725307417,
+      "total_duplicates": 0.0027989552345363267,
+      "unique_channel_count": 0.0007743886579283821
     },
     "permutation_std": {
-      "mean_latency_minutes": 7.393020318132744e-05,
-      "valid_comment_count": 7.716344436721729e-05,
+      "mean_latency_minutes": 3.291091328200064e-05,
+      "valid_comment_count": 3.454217386416421e-05,
       "filtered_comment_count": 0.0,
-      "latency_variance_score": 4.884217341229056e-05,
-      "mean_text_length": 3.077843132069814e-05,
-      "std_text_length": 5.47518813845778e-05,
-      "unique_comment_ratio": 0.0,
-      "max_duplicate_count": 4.8409166804051064e-05,
-      "total_duplicates": 5.4080243556296324e-05,
-      "unique_channel_count": 7.900093162838684e-05
+      "latency_variance_score": 2.840930487554685e-05,
+      "mean_text_length": 2.6656223589156687e-05,
+      "std_text_length": 2.8864396476202753e-05,
+      "unique_comment_ratio": 4.581297626802469e-05,
+      "max_duplicate_count": 3.426773214422105e-05,
+      "total_duplicates": 4.398805507430068e-05,
+      "unique_channel_count": 2.4936983560599122e-05
     },
     "standardized_diff": {
-      "mean_latency_minutes": 0.7421638099010998,
-      "valid_comment_count": 1.5491690247983372,
       "filtered_comment_count": NaN,
-      "latency_variance_score": 0.9393471875910737,
-      "mean_text_length": 1.1591788792453819,
-      "std_text_length": 1.3484802378338585,
-      "unique_comment_ratio": NaN,
-      "max_duplicate_count": 2.0463612563833737,
-      "total_duplicates": 2.2608915865607617,
-      "unique_channel_count": 0.14343163302041514,
-      "labels": -3.8797073480750486
+      "labels": NaN,
+      "latency_variance_score": 0.7732654114551977,
+      "max_duplicate_count": 1.8595884405790144,
+      "mean_latency_minutes": 0.8996893524922047,
+      "mean_text_length": 0.8114117436950082,
+      "std_text_length": 0.8502190280475102,
+      "total_duplicates": 2.076705924074339,
+      "unique_channel_count": 0.03427697101857584,
+      "unique_comment_ratio": -2.234949446578641,
+      "valid_comment_count": 1.185323831702944
     }
   }
 }
