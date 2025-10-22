@@ -11,9 +11,9 @@ feature_groups:
 - account_features
 - replies
 pipeline_name: behavioral_pipeline2
-run_timestamp: '2025-10-20T23:55:35.409286'
+run_timestamp: '2025-10-22T07:27:19.792150'
 shapes:
   all:
-  - 103618
+  - 175265
   - 16
 version: v2.0

@@ -1,0 +1,15 @@
+config_path: config/pipelines/basic_pipeline.yaml
+description: Basic features for bot detection - fast features only
+feature_groups:
+- counting_features
+- latency_mean
+- latency_variance_score
+- text_features
+- behavioral_features
+pipeline_name: basic_pipeline
+run_timestamp: '2025-10-22T07:27:02.277316'
+shapes:
+  all:
+  - 9427
+  - 11
+version: v1.0
