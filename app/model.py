@@ -132,7 +132,7 @@ def display_methodology():
             - We might be interested in the amount of all-caps behavior from a user's comment patterns.
             This could indicate a tendency to elicit strong emotional responses.
             
-        ### 3. :blue[How do we evalute our model?]
+        ### 3. :blue[How do we evaluate our model?]
         This is something that I found interesting as this is my first time working in an
         unsupervised learning setting. Obviously, the best way to verify our results
         is to manually check them. We can also run various checks to increase our confidence 
