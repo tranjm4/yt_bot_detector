@@ -5,6 +5,7 @@ Displays anomaly detection results, user profiles, and model performance.
 """
 
 import json
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -27,28 +28,48 @@ def get_db_connection() -> DatabaseConnection:
 
 def display_model_page():
     """Main model visualization page."""
-    st.title("Bot Detection Results")
-    st.write("Anomaly detection results from the latest model run")
+    display_lessons_learned()
+    display_methodology()
+
+    st.header("Bot Detection Results")
+    
+    st.write("At the bottom of this section contains the top 100 users \
+        based on anomaly scores from the isolation forest model. \
+        You can play around and observe their comment histories. \
+        Some of them are quite silly")
 
     try:
         db = get_db_connection()
 
-        # Tabs for different views
-        tab1, tab2, tab3, tab4 = st.tabs(
-            ["Latest Predictions", "User Details", "Run History", "Trends"]
+        # Get predictions and model info
+        predictions_df = get_latest_predictions(db, limit=100)
+
+        if predictions_df.empty:
+            st.warning("No predictions found. Run the pipeline first.")
+            return
+
+        latest_run = predictions_df.iloc[0]
+
+        # Header with model info
+        st.info(
+            f"**Model:** {latest_run['modelname']} | "
+            f"**Run Time:** {latest_run['runtimestamp']} | "
         )
 
-        with tab1:
-            display_latest_predictions(db)
+        # Top row: Left = predictions table, Right = model visualizations
+        col_left, col_right = st.columns([3, 2])
 
-        with tab2:
-            display_user_details(db)
+        with col_left:
+            display_overview()
+            st.divider()
+            display_predictions_table(predictions_df)
 
-        with tab3:
-            display_run_history(db)
+        with col_right:
+            display_model_visualizations_compact(latest_run['modelname'])
 
-        with tab4:
-            display_trends(db)
+        # Bottom row: User details (full width)
+        st.divider()
+        display_user_details_section(db, predictions_df)
 
     except Exception as e:
         st.error(f"Error connecting to database: {e}")
@@ -60,31 +81,117 @@ def display_model_page():
             "- POSTGRES_PASSWORD\n"
             "- POSTGRES_DB"
         )
+    
+def display_methodology():
+    """Methodology text describing approach"""
 
+    with st.expander(":blue[Methodology]"):
+        st.markdown("""
+        ## :blue[Methodology]
+        
+        ---
+        ## :blue[Data]
+        The data was collected from the [Google Youtube API](https://developers.google.com/youtube/v3/docs).
+        
+        The raw features I was able to extract can be detailed in my Postgres schema on my [GitHub repo](https://github.com/tranjm4/yt_bot_detector/blob/main/psql/schema.sql).
+        
+        ---
+        
+        Given that it's non-trivial to identify a bot based on
+        manual inspection (and that we don't actually know the true labels), 
+        it would be difficult to approach this problem as a
+        supervised or even semi-supervised (i.e., manually labeling a few) task.
+        
+        Thus, I centered my approach around the following questions:
+        - What temporal patterns should we expect?
+        - What text content patterns should we expect?
+        - How do we ensure the models we make are not bogus without ground truths?
+        
+        ### 1.  :blue[What temporal patterns should we expect?]
+        - :red[**Deviation from peak hours** ]
+            - Given that my data was centered around US political content, it's a reasonable assumption to make that
+            the majority of the audience live within a 3-hour timezone difference. If a user is
+            commenting opposite of peak hours (3am PST, 6am EST), it might raise some questions
+            about the authenticity of the user (though we would like to take this with a grain of salt;
+            US citizens living abroad, night shift workers, alternative lifestyles, etc., can be genuine factors)
+        
+        - :red[**Quick responses to videos**]
+            - Additionally, we can observe patterns in how quickly users comment on videos.
+            If a user comments within seconds on a majority of videos, it is likely that
+        
+        - :red[**Low variance in response delays**]
+            - Similarly, if users are commenting, for example, exactly 20 minutes consistently
+            after many videos (i.e., low variance in the delay), it might suggest some systematic behavior.
+        
+        ### 2. :blue[What text content patterns should we expect?]
+        - :red[**Copy paste counts**]
+            - We might expect bot users to be particularly 'spammy' with their activity. That is,
+            frequent copy-pasting of comments may be deemed, at best, emotionally heated behavior and,
+            at worst, bot behavior.
+        - :red[**All-caps tendencies**]
+            - We might be interested in the amount of all-caps behavior from a user's comment patterns.
+            This could indicate a tendency to elicit strong emotional responses.
+            
+        ### 3. :blue[How do we evalute our model?]
+        This is something that I found interesting as this is my first time working in an
+        unsupervised learning setting. Obviously, the best way to verify our results
+        is to manually check them. We can also run various checks to increase our confidence 
+        in the performance in our model.
+        - :green[**Manual inspection**]: This is the most obvious way, but it's not straight-forward.
+        It can be time-consuming to check, since we don't have any ground truth labels.
+        - :green[**Repeated isolation forest fittings**]: by running multiple isolation forests and
+        comparing the average percentage of anomalies that are shared among the models 
+        ([Jaccard similarity](https://en.wikipedia.org/wiki/Jaccard_index)), we can ensure our
+        isolation forest is robust to pure chance.
+        - :green[**Anomaly score distribution**]: by checking for the counts of anomaly scores,
+        we can visually determine how well our isolation forest is splitting from the rest of the data.
+        - :green[**UMAP visualization**]: though not the strongest indicator, we can run it
+        independently, adding the labels generated by the isolation forest afterwards
+        to visualize how well the anomalies cluster in the data.
+        """)
+        
+def display_lessons_learned():
+    """Takeways text"""
+    with st.expander(":blue[Lessons Learned]"):
+        st.markdown("""
+        This project was incredibly fun and challenging to work with, since this
+        was my first time dealing with unsupervised models. Being able to gain
+        insights on behavioral patterns felt very gratifying and empowering
+        to know that these things are possible.
+        
+        I was also able to apply my working knowledge with MLOps ideas
+        I've been learning (linked above), utilizing the following:
+        - :blue[GitHub Actions] for continuous testing of my modules
+        - Data versioning, feature engineering, and feature stores for more streamlined data pipelines
+        - :blue[Docker containerization] for ease of end-to-end streamlining (data scraping -> feature engineering -> model training -> model evaluation)
+        """)
+        
+def display_overview():
+    """Overview text describing findings"""
+    st.subheader("Results Overview")
+    st.markdown("""
+    The results of the model highlights some key points:
+    - :orange[The isolation forest model appears to be somewhat stable]. Across
+    random initializations, the model appears to have a 0.75 average Jaccard similarity.
+    - :orange[The isolation forest model shows somewhat decent separation between
+    anomalies and non-anomalies]. The :blue[Score Distribution] shows a cluster
+    that's somewhat separated from non-anomaly users (it's shown in log-scale,
+    which may appear a bit funky -- I plan on including non-log scalings soon).
+    - :orange[The UMAP visualizations show a distinct separation from the
+    rest of the data]. The 'spaghetti' patterns are likely attributed to the
+    high-locality hyperparameters used to generate the model. It
+    - :orange[Comment frequency and account age appears to be one of the more important features].
+    Users that comment very often with relatively new accounts are being picked up as anomalies.
+    """)
 
-def display_latest_predictions(db: DatabaseConnection):
-    """Display latest prediction results."""
-    st.header("Top Anomalous Users")
-
-    # Get predictions
-    predictions_df = get_latest_predictions(db, limit=100)
-
-    if predictions_df.empty:
-        st.warning("No predictions found. Run the pipeline first.")
-        return
-
-    # Display run info
-    latest_run = predictions_df.iloc[0]
-    st.info(
-        f"**Model:** {latest_run['modelname']} ({latest_run['modelversion']})\n\n"
-        f"**Run Time:** {latest_run['runtimestamp']}\n\n"
-        f"**Anomalies Detected:** {len(predictions_df)}"
-    )
+def display_predictions_table(predictions_df: pd.DataFrame):
+    """Display predictions table."""
+    st.subheader("Top Anomalous Users")
 
     # Filter controls
     col1, col2 = st.columns(2)
     with col1:
-        limit = st.slider("Number of users to display", 10, 100, 50)
+        limit = st.slider("Number of users to display", 10, 100, 50, key="table_limit")
     with col2:
         sort_by = st.selectbox(
             "Sort by", ["Anomaly Score (Low to High)", "Account Age", "Comment Velocity"]
@@ -95,7 +202,7 @@ def display_latest_predictions(db: DatabaseConnection):
 
     # Parse feature values for display
     display_df["features"] = display_df["featurevalues"].apply(
-        lambda x: json.loads(x) if isinstance(x, str) else x
+        lambda x: x if isinstance(x, dict) else (json.loads(x) if isinstance(x, str) else {})
     )
 
     # Create display columns
@@ -131,10 +238,11 @@ def display_latest_predictions(db: DatabaseConnection):
                 "videocount": "Videos",
             }
         ),
-        use_container_width=True,
+        width='stretch',
     )
 
     # Download button
+    latest_run = predictions_df.iloc[0]
     csv = display_df.to_csv(index=False)
     st.download_button(
         label="Download as CSV",
@@ -144,25 +252,19 @@ def display_latest_predictions(db: DatabaseConnection):
     )
 
 
-def display_user_details(db: DatabaseConnection):
+def display_user_details_section(db: DatabaseConnection, predictions_df: pd.DataFrame):
     """Display detailed information for a specific user."""
-    st.header("User Profile")
-
-    # Get latest predictions for user selection
-    predictions_df = get_latest_predictions(db, limit=100)
-
-    if predictions_df.empty:
-        st.warning("No predictions available.")
-        return
+    st.subheader("User Profile")
 
     # User selection
     user_options = {
         f"{row['username']} ({row['userid']})": row["userid"]
         for _, row in predictions_df.iterrows()
     }
-
-    selected_user_key = st.selectbox("Select a user", list(user_options.keys()))
-    selected_user_id = user_options[selected_user_key]
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_user_key = st.selectbox("Select a user", list(user_options.keys()))
+        selected_user_id = user_options[selected_user_key]
 
     # Get user data
     user_row = predictions_df[predictions_df["userid"] == selected_user_id].iloc[0]
@@ -170,108 +272,71 @@ def display_user_details(db: DatabaseConnection):
     user_comments = get_user_comments(db, selected_user_id, limit=50)
 
     # Display user profile
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Anomaly Score", f"{user_row['anomalyscore']:.4f}")
     with col2:
-        st.metric("Subscribers", user_row["subcount"] or "Unknown")
-    with col3:
-        st.metric("Videos", user_row["videocount"] or "Unknown")
+        st.metric("Anomaly Score", f"{user_row['anomalyscore']:.4f}")
+        st.write(f"**Account Created:** {user_row['accountcreatedate']}")
 
-    st.write(f"**Account Created:** {user_row['accountcreatedate']}")
+    # Layout for feature values and prediction history
+    col1, col2 = st.columns(2)
 
-    # Feature values
-    st.subheader("Feature Values")
-    features = json.loads(user_row["featurevalues"])
-    feature_df = pd.DataFrame(
-        [{"Feature": k, "Value": f"{v:.4f}"} for k, v in features.items()]
-    )
-    st.dataframe(feature_df, use_container_width=True)
-
-    # Prediction history
-    if not user_history.empty:
-        st.subheader("Prediction History")
-        st.line_chart(
-            user_history.set_index("runtimestamp")["anomalyscore"],
-            use_container_width=True,
+    with col1:
+        st.subheader("Feature Values")
+        features = user_row["featurevalues"] if isinstance(user_row["featurevalues"], dict) else json.loads(user_row["featurevalues"])
+        feature_df = pd.DataFrame(
+            [{"Feature": k, "Value": v} for k, v in features.items()]
         )
+        feature_df = feature_df.sort_values("Value", ascending=True)
+        st.bar_chart(feature_df.set_index("Feature"), width='stretch', horizontal=True)
 
-    # Recent comments
+    with col2:
+        if not user_history.empty:
+            st.subheader("Prediction History")
+            st.line_chart(
+                user_history.set_index("runtimestamp")["anomalyscore"],
+                width='stretch',
+            )
+
+    # Recent comments - full width
     if not user_comments.empty:
         st.subheader("Recent Comments")
-        for _, comment in user_comments.head(10).iterrows():
-            with st.expander(
-                f"On '{comment['videotitle'][:50]}...' - {comment['publishdate']}"
-            ):
-                st.write(comment["commenttext"])
-                st.caption(
-                    f"Channel: {comment['channelname']} | Likes: {comment['likecount']}"
-                )
+        num_to_show = st.slider("Number of comments to show", 5, 50, 10, key="comment_slider")
+
+        for _, comment in user_comments.head(num_to_show).iterrows():
+            st.markdown(f"**{comment['publishdate']}** {comment['commenttext']}")
+            st.caption(f"{comment['channelname']} • {comment['videotitle']} • {comment['likecount']} likes")
+            st.divider()
+
+        st.caption(f"Showing {min(num_to_show, len(user_comments))} of {len(user_comments)} comments")
     else:
         st.info("No comments found for this user.")
 
 
-def display_run_history(db: DatabaseConnection):
-    """Display history of prediction runs."""
-    st.header("Prediction Run History")
+def display_model_visualizations_compact(model_name: str):
+    """Display model performance visualizations."""
+    st.subheader("Model Visualizations")
 
-    runs_df = get_prediction_runs(db, limit=20)
+    # Get project root and results directory
+    app_dir = Path(__file__).parent
+    project_root = app_dir.parent
+    results_dir = project_root / "results" / model_name
 
-    if runs_df.empty:
-        st.warning("No prediction runs found.")
+    if not results_dir.exists():
+        st.warning(f"No visualizations found")
         return
 
-    # Display runs table
-    st.dataframe(
-        runs_df.rename(
-            columns={
-                "runtimestamp": "Run Time",
-                "modelname": "Model",
-                "modelversion": "Version",
-                "anomalycount": "Anomalies",
-                "avganomalyscore": "Avg Score",
-                "minanomalyscore": "Min Score",
-                "maxanomalyscore": "Max Score",
-            }
-        ),
-        use_container_width=True,
-    )
+    # Define visualization categories (prioritized order)
+    viz_config = [
+        ("UMAP", "umap_if_visualization.png"),
+        ("Score Distribution", "anomaly_score_distribution.png"),
+        ("Feature Importance", "permutation_importance.png"),
+        ("Feature Differences", "feature_differences.png"),
+        ("Ensemble Venn", "ensemble_venn.png"),
+        ("Jaccard Similarity", "jaccard_similarity.png"),
+    ]
 
-    # Chart of anomaly counts over time
-    st.subheader("Anomalies Detected Over Time")
-    st.bar_chart(
-        runs_df.set_index("runtimestamp")["anomalycount"], use_container_width=True
-    )
-
-
-def display_trends(db: DatabaseConnection):
-    """Display trends in anomaly detection."""
-    st.header("Detection Trends")
-
-    days = st.slider("Days to show", 7, 90, 30)
-
-    trends_df = get_anomaly_trends(db, days=days)
-
-    if trends_df.empty:
-        st.warning("No trend data available.")
-        return
-
-    # Daily anomaly count
-    st.subheader("Daily Anomaly Detections")
-    st.line_chart(
-        trends_df.set_index("date")["totalanomalies"], use_container_width=True
-    )
-
-    # Average anomaly score
-    st.subheader("Average Anomaly Score")
-    st.line_chart(trends_df.set_index("date")["avgscore"], use_container_width=True)
-
-    # Summary statistics
-    st.subheader("Summary Statistics")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Runs", trends_df["runs"].sum())
-    with col2:
-        st.metric("Total Anomalies", trends_df["totalanomalies"].sum())
-    with col3:
-        st.metric("Avg Score", f"{trends_df['avgscore'].mean():.4f}")
+    # Display all available visualizations stacked
+    for viz_name, viz_file in viz_config:
+        viz_path = results_dir / viz_file
+        if viz_path.exists():
+            st.markdown(f"**{viz_name}**")
+            st.image(str(viz_path), width='stretch')

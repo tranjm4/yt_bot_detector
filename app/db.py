@@ -13,7 +13,12 @@ from psycopg2 import pool
 from contextlib import contextmanager
 
 from dotenv import load_dotenv
-load_dotenv("../.env.railway")
+import os
+
+# Load .env.railway from project root
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_env_path = os.path.join(_current_dir, "..", ".env.railway")
+load_dotenv(_env_path)
 
 
 class DatabaseConnection:
