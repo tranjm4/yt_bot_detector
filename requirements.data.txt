@@ -1,0 +1,5 @@
+emoji==2.15.0
+sentence-transformers==5.1.1
+google-api-core==2.26.0
+google-api-python-client==2.184.0
+requests==2.32.5
