@@ -22,6 +22,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import joblib
 
 import src.model.isolation_forest_baseline as iso_forest
 import src.model.umap as um
@@ -276,6 +277,11 @@ def fit_umap(df: pd.DataFrame, X: np.ndarray, config: ModelConfig):
     visualize_umap_with_labels(embedding_df, outfile_dir)
     iso_forest.plot_anomaly_distribution(df["anomaly_score"], predictions=df["labels"], output_dir=outfile_dir)
 
+    # Save UMAP model
+    umap_model_path = outfile_dir / "umap_model.joblib"
+    joblib.dump(reducer, umap_model_path)
+    logger.info(f"UMAP model saved to: {umap_model_path}")
+
     return reducer, embedding_df
 
 def run_feature_evaluations(config: ModelConfig, outfile_dir: str):
@@ -314,6 +320,11 @@ def main():
     if_results_path = outfile_dir / "isolation_forest_predictions.csv"
     df_with_labels.to_csv(if_results_path, index=False)
     logger.info(f"Isolation Forest predictions saved to: {if_results_path}")
+
+    # Save Isolation Forest model
+    if_model_path = outfile_dir / "isolation_forest_model.joblib"
+    joblib.dump(if_model, if_model_path)
+    logger.info(f"Isolation Forest model saved to: {if_model_path}")
 
     # Run UMAP model with isolation forest as labels
     logger.info("")
